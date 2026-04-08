@@ -4,6 +4,7 @@ import {
   normalizeRole,
   resolveDisplayName,
   resolveUserRole,
+  sanitizeRedirectTo,
 } from '@/lib/auth/auth-utils';
 
 describe('auth utils', () => {
@@ -52,5 +53,13 @@ describe('auth utils', () => {
         email: 'lead@example.com',
       })
     ).toBe('lead');
+  });
+
+  it('sanitizes redirect targets to local app paths', () => {
+    expect(sanitizeRedirectTo('/dashboard')).toBe('/dashboard');
+    expect(sanitizeRedirectTo('/events/spring')).toBe('/events/spring');
+    expect(sanitizeRedirectTo('https://evil.example')).toBe('/dashboard');
+    expect(sanitizeRedirectTo('//evil.example')).toBe('/dashboard');
+    expect(sanitizeRedirectTo(undefined, '/profile')).toBe('/profile');
   });
 });

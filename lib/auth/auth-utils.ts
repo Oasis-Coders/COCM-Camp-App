@@ -26,3 +26,15 @@ export function resolveDisplayName(input: {
 }): string {
   return input.displayName ?? input.fullName ?? input.email?.split('@')[0] ?? 'Camp user';
 }
+
+export function sanitizeRedirectTo(value: string | undefined, fallback = '/dashboard'): string {
+  if (!value) {
+    return fallback;
+  }
+
+  if (!value.startsWith('/') || value.startsWith('//')) {
+    return fallback;
+  }
+
+  return value;
+}

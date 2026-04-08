@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 
+import { sanitizeRedirectTo } from '@/lib/auth/auth-utils';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
-  const redirectTo = url.searchParams.get('redirectTo') ?? '/dashboard';
+  const redirectTo = sanitizeRedirectTo(url.searchParams.get('redirectTo') ?? '/dashboard');
   const code = url.searchParams.get('code');
 
   if (hasSupabaseEnv() && code) {
