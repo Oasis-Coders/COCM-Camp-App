@@ -5,10 +5,10 @@ import { getSession } from '@/lib/auth/session';
 
 const devToolItems = [
   {
-    href: '/dev-tools/account',
-    label: 'Account Editor',
+    href: '/dev-tools/users',
+    label: 'All App Users',
     description:
-      'Inspect the currently signed-in account and edit profile fields, email, and password.',
+      'Review every current account, confirm profile linkage, change roles, reset passwords, and remove users.',
     status: 'Ready',
   },
   {
@@ -25,13 +25,14 @@ export default async function DevToolsPage() {
 
   return (
     <AppShell title="Dev Tools" eyebrow="Temporary internal tools">
-      <div className="grid gap-6 xl:grid-cols-[1.05fr,0.95fr]">
+      <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
         <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Tool hub</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">Developer menu</h3>
           <p className="mt-3 max-w-2xl text-sm text-slate-600">
-            This page is the entry point for temporary development utilities. Each tool gets its own
-            route so we can expand the set without cluttering the main app shell.
+            This page is the entry point for temporary development utilities. Personal account
+            details now live under the main Profile tab, while administrative tools stay grouped
+            here.
           </p>
 
           <div className="mt-6 grid gap-4">

@@ -1,4 +1,5 @@
 export type AppRole = 'super_admin' | 'admin' | 'staff' | 'participant';
+export const appRoles: AppRole[] = ['super_admin', 'admin', 'staff', 'participant'];
 
 export type NavItem = {
   href: string;
