@@ -5,7 +5,15 @@ import { navItems, sampleEvents, sampleTasks } from '@/lib/app-config';
 describe('app scaffold config', () => {
   it('includes the primary product areas in navigation', () => {
     expect(navItems.map((item) => item.href)).toEqual(
-      expect.arrayContaining(['/dashboard', '/events', '/tasks', '/check-in', '/profile', '/admin'])
+      expect.arrayContaining([
+        '/dashboard',
+        '/events',
+        '/tasks',
+        '/check-in',
+        '/profile',
+        '/dev-tools',
+        '/admin',
+      ])
     );
   });
 

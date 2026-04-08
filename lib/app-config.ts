@@ -13,6 +13,7 @@ export const navItems: NavItem[] = [
   { href: '/tasks', label: 'Tasks', description: 'Assignments and follow-ups' },
   { href: '/check-in', label: 'Check-in', description: 'Front desk flow' },
   { href: '/profile', label: 'Profile', description: 'Account details' },
+  { href: '/dev-tools', label: 'Dev Tools', description: 'Temporary internal tool menu' },
   {
     href: '/admin',
     label: 'Admin',
