@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  buildSignUpMetadata,
   normalizeRole,
   resolveDisplayName,
   resolveUserRole,
@@ -68,5 +69,34 @@ describe('auth utils', () => {
     expect(sanitizeRedirectTo('//evil.example')).toBe('/dashboard');
     expect(sanitizeRedirectTo('dashboard')).toBe('/dashboard');
     expect(sanitizeRedirectTo(undefined, '/profile')).toBe('/profile');
+  });
+
+  it('builds trimmed sign-up profile metadata for Supabase', () => {
+    expect(
+      buildSignUpMetadata({
+        firstName: '  Luke ',
+        lastName: ' Fields  ',
+        preferredName: '  LQ ',
+      })
+    ).toEqual({
+      first_name: 'Luke',
+      last_name: 'Fields',
+      preferred_name: 'LQ',
+      full_name: 'Luke Fields',
+      display_name: 'LQ',
+    });
+
+    expect(
+      buildSignUpMetadata({
+        firstName: 'Jamie',
+        lastName: 'Rivera',
+      })
+    ).toEqual({
+      first_name: 'Jamie',
+      last_name: 'Rivera',
+      preferred_name: undefined,
+      full_name: 'Jamie Rivera',
+      display_name: 'Jamie Rivera',
+    });
   });
 });

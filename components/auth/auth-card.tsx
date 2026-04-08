@@ -54,7 +54,61 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
           className="mt-8 rounded-[28px] border border-camp-forest/10 bg-white p-6 shadow-panel"
         >
           <input type="hidden" name="redirectTo" value={redirectTo} />
-          <label htmlFor="email" className="block text-sm font-semibold text-camp-forest">
+          {mode === 'sign-up' ? (
+            <>
+              <div className="grid gap-5 md:grid-cols-2">
+                <div>
+                  <label htmlFor="firstName" className="block text-sm font-semibold text-camp-forest">
+                    First name
+                  </label>
+                  <input
+                    id="firstName"
+                    name="firstName"
+                    type="text"
+                    required
+                    autoComplete="given-name"
+                    placeholder="First name"
+                    className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="lastName" className="block text-sm font-semibold text-camp-forest">
+                    Last name
+                  </label>
+                  <input
+                    id="lastName"
+                    name="lastName"
+                    type="text"
+                    required
+                    autoComplete="family-name"
+                    placeholder="Last name"
+                    className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+                  />
+                </div>
+              </div>
+
+              <label
+                htmlFor="preferredName"
+                className="mt-5 block text-sm font-semibold text-camp-forest"
+              >
+                Preferred name
+              </label>
+              <input
+                id="preferredName"
+                name="preferredName"
+                type="text"
+                autoComplete="nickname"
+                placeholder="What should we call you?"
+                className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+              />
+            </>
+          ) : null}
+
+          <label
+            htmlFor="email"
+            className={`${mode === 'sign-up' ? 'mt-5 ' : ''}block text-sm font-semibold text-camp-forest`}
+          >
             Email address
           </label>
           <input

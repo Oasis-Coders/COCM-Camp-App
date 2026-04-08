@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 
 import { AuthCard } from '@/components/auth/auth-card';
 import { getSession } from '@/lib/auth/session';
-import { sanitizeRedirectTo } from '@/lib/auth/auth-utils';
+import { buildSignUpMetadata, sanitizeRedirectTo } from '@/lib/auth/auth-utils';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
 
@@ -18,9 +18,12 @@ async function requestPasswordSignUp(formData: FormData) {
 
   const email = String(formData.get('email') ?? '').trim();
   const password = String(formData.get('password') ?? '');
+  const firstName = String(formData.get('firstName') ?? '').trim();
+  const lastName = String(formData.get('lastName') ?? '').trim();
+  const preferredName = String(formData.get('preferredName') ?? '').trim();
   const redirectTo = sanitizeRedirectTo(String(formData.get('redirectTo') ?? '/dashboard'));
 
-  if (!email || !password) {
+  if (!email || !password || !firstName || !lastName) {
     redirect(`/sign-up?error=missing-fields&redirectTo=${encodeURIComponent(redirectTo)}`);
   }
 
@@ -33,6 +36,13 @@ async function requestPasswordSignUp(formData: FormData) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
+    options: {
+      data: buildSignUpMetadata({
+        firstName,
+        lastName,
+        preferredName,
+      }),
+    },
   });
 
   if (error) {
@@ -61,7 +71,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   }
 
   const message = params.error
-    ? 'Sign-up could not be completed. Try a stronger password or check whether account creation is enabled in Supabase.'
+    ? 'Sign-up could not be completed. Make sure the required profile fields are filled, use a strong password, and check whether account creation is enabled in Supabase.'
     : undefined;
 
   return (

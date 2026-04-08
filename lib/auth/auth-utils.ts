@@ -2,6 +2,12 @@ import type { AppRole } from '@/lib/app-config';
 
 const defaultRole: AppRole = 'participant';
 
+export type SignUpProfileInput = {
+  firstName?: string;
+  lastName?: string;
+  preferredName?: string;
+};
+
 export function normalizeRole(value: string | undefined): AppRole {
   if (
     value === 'super_admin' ||
@@ -37,4 +43,18 @@ export function sanitizeRedirectTo(value: string | undefined, fallback = '/dashb
   }
 
   return value;
+}
+
+export function buildSignUpMetadata(input: SignUpProfileInput) {
+  const firstName = input.firstName?.trim() ?? '';
+  const lastName = input.lastName?.trim() ?? '';
+  const preferredName = input.preferredName?.trim() ?? '';
+
+  return {
+    first_name: firstName,
+    last_name: lastName,
+    preferred_name: preferredName || undefined,
+    full_name: [firstName, lastName].filter(Boolean).join(' ') || undefined,
+    display_name: preferredName || [firstName, lastName].filter(Boolean).join(' ') || undefined,
+  };
 }
