@@ -1,10 +1,18 @@
 import Link from 'next/link';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
 
 import { AppShell } from '@/components/layout/app-shell';
-import { buildDirectoryEntries } from '@/lib/dev-tools/user-directory';
+import { appRoles } from '@/lib/app-config';
+import {
+  buildDirectoryEntries,
+  normalizePasswordResetInput,
+  normalizeRoleActionInput,
+} from '@/lib/dev-tools/user-directory';
 import { getSession } from '@/lib/auth/session';
 import { hasSupabaseAdminEnv } from '@/lib/supabase/env';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 const devToolItems = [
   {
@@ -57,9 +65,234 @@ async function loadDirectoryEntries() {
   });
 }
 
-export default async function DevToolsPage() {
+async function loadCurrentAuthUserId() {
+  const supabase = await createSupabaseServerClient();
+
+  if (!supabase) {
+    return null;
+  }
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  return user?.id ?? null;
+}
+
+async function changeUserRole(formData: FormData) {
+  'use server';
+
+  const userId = String(formData.get('userId') ?? '');
+  const targetRole = normalizeRoleActionInput(String(formData.get('role') ?? 'participant'));
+  const currentUserId = String(formData.get('currentUserId') ?? '');
+
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    redirect('/dev-tools?directory=unavailable');
+  }
+
+  const { data: authUserData, error: authUserError } =
+    await supabase.auth.admin.getUserById(userId);
+
+  if (authUserError || !authUserData.user) {
+    redirect('/dev-tools?directory=role-error');
+  }
+
+  const user = authUserData.user;
+  const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
+    app_metadata: {
+      ...(user.app_metadata ?? {}),
+      role: targetRole,
+    },
+    user_metadata: {
+      ...(user.user_metadata ?? {}),
+      role: targetRole,
+    },
+  });
+
+  if (authUpdateError) {
+    redirect('/dev-tools?directory=role-error');
+  }
+
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('id')
+    .eq('auth_user_id', userId)
+    .maybeSingle<{ id: string }>();
+
+  if (profile?.id) {
+    const { data: roleRecord, error: roleError } = await supabase
+      .from('roles')
+      .select('id')
+      .eq('name', targetRole)
+      .single<{ id: string }>();
+
+    if (roleError || !roleRecord) {
+      redirect('/dev-tools?directory=role-error');
+    }
+
+    const { error: deleteRolesError } = await supabase
+      .from('user_roles')
+      .delete()
+      .eq('user_id', profile.id);
+
+    if (deleteRolesError) {
+      redirect('/dev-tools?directory=role-error');
+    }
+
+    const { error: insertRoleError } = await supabase.from('user_roles').insert({
+      user_id: profile.id,
+      role_id: roleRecord.id,
+    });
+
+    if (insertRoleError) {
+      redirect('/dev-tools?directory=role-error');
+    }
+  }
+
+  revalidatePath('/dev-tools');
+  revalidatePath('/profile');
+  redirect(
+    `/dev-tools?directory=${userId === currentUserId ? 'current-role-updated' : 'role-updated'}`
+  );
+}
+
+async function resetUserPassword(formData: FormData) {
+  'use server';
+
+  const userId = String(formData.get('userId') ?? '');
+  const nextPassword = normalizePasswordResetInput(String(formData.get('password') ?? ''));
+
+  if (!nextPassword) {
+    redirect('/dev-tools?directory=password-missing');
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    redirect('/dev-tools?directory=unavailable');
+  }
+
+  const { error } = await supabase.auth.admin.updateUserById(userId, {
+    password: nextPassword,
+  });
+
+  if (error) {
+    redirect('/dev-tools?directory=password-error');
+  }
+
+  revalidatePath('/dev-tools');
+  redirect('/dev-tools?directory=password-reset');
+}
+
+async function removeUser(formData: FormData) {
+  'use server';
+
+  const userId = String(formData.get('userId') ?? '');
+  const currentUserId = String(formData.get('currentUserId') ?? '');
+
+  if (!userId || userId === currentUserId) {
+    redirect('/dev-tools?directory=remove-blocked');
+  }
+
+  const supabase = createSupabaseAdminClient();
+
+  if (!supabase) {
+    redirect('/dev-tools?directory=unavailable');
+  }
+
+  const { error } = await supabase.auth.admin.deleteUser(userId);
+
+  if (error) {
+    redirect('/dev-tools?directory=remove-error');
+  }
+
+  revalidatePath('/dev-tools');
+  redirect('/dev-tools?directory=removed');
+}
+
+function getDirectoryMessage(status: string | undefined) {
+  switch (status) {
+    case 'role-updated':
+      return {
+        tone: 'success' as const,
+        text: 'User role updated successfully.',
+      };
+    case 'current-role-updated':
+      return {
+        tone: 'success' as const,
+        text: 'User role updated successfully. Reload the app if your own navigation should change immediately.',
+      };
+    case 'password-reset':
+      return {
+        tone: 'success' as const,
+        text: 'Password reset completed for that user.',
+      };
+    case 'removed':
+      return {
+        tone: 'success' as const,
+        text: 'User removed successfully.',
+      };
+    case 'remove-blocked':
+      return {
+        tone: 'error' as const,
+        text: 'The current signed-in user cannot remove their own account from this screen.',
+      };
+    case 'password-missing':
+      return {
+        tone: 'error' as const,
+        text: 'Enter a new password before submitting a reset.',
+      };
+    case 'role-error':
+      return {
+        tone: 'error' as const,
+        text: 'The role change could not be completed.',
+      };
+    case 'password-error':
+      return {
+        tone: 'error' as const,
+        text: 'The password reset could not be completed.',
+      };
+    case 'remove-error':
+      return {
+        tone: 'error' as const,
+        text: 'The user could not be removed.',
+      };
+    case 'unavailable':
+      return {
+        tone: 'error' as const,
+        text: 'This environment needs the Supabase service role key for admin actions.',
+      };
+    default:
+      return null;
+  }
+}
+
+function Alert({ tone, text }: { tone: 'success' | 'error'; text: string }) {
+  return (
+    <div
+      className={`rounded-2xl border px-4 py-3 text-sm ${
+        tone === 'success'
+          ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
+          : 'border-rose-200 bg-rose-50 text-rose-900'
+      }`}
+    >
+      {text}
+    </div>
+  );
+}
+
+export default async function DevToolsPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ directory?: string }>;
+}) {
+  const params = await searchParams;
   const session = await getSession();
   const directoryEntries = await loadDirectoryEntries();
+  const currentAuthUserId = await loadCurrentAuthUserId();
+  const directoryMessage = getDirectoryMessage(params.directory);
 
   return (
     <AppShell title="Dev Tools" eyebrow="Temporary internal tools">
@@ -80,6 +313,12 @@ export default async function DevToolsPage() {
             </div>
           </div>
 
+          {directoryMessage ? (
+            <div className="mt-4">
+              <Alert {...directoryMessage} />
+            </div>
+          ) : null}
+
           {directoryEntries ? (
             <div className="mt-6 overflow-x-auto rounded-[20px] border border-camp-forest/10">
               <table className="min-w-full divide-y divide-camp-forest/10 text-sm">
@@ -90,6 +329,7 @@ export default async function DevToolsPage() {
                     <th className="px-4 py-3 font-semibold">Profile</th>
                     <th className="px-4 py-3 font-semibold">Created</th>
                     <th className="px-4 py-3 font-semibold">Last sign-in</th>
+                    <th className="px-4 py-3 font-semibold">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-camp-forest/10 bg-white">
@@ -128,6 +368,84 @@ export default async function DevToolsPage() {
                         {entry.lastSignInAt
                           ? new Date(entry.lastSignInAt).toLocaleString()
                           : 'Never'}
+                      </td>
+                      <td className="px-4 py-4 align-top">
+                        <div className="min-w-56 space-y-4">
+                          <form action={changeUserRole} className="space-y-2">
+                            <input type="hidden" name="userId" value={entry.authUserId} />
+                            <input
+                              type="hidden"
+                              name="currentUserId"
+                              value={currentAuthUserId ?? ''}
+                            />
+                            <label
+                              htmlFor={`role-${entry.authUserId}`}
+                              className="block text-xs font-semibold uppercase tracking-[0.2em] text-camp-moss"
+                            >
+                              Change role
+                            </label>
+                            <div className="flex gap-2">
+                              <select
+                                id={`role-${entry.authUserId}`}
+                                name="role"
+                                defaultValue={entry.role.replace(' ', '_')}
+                                className="w-full rounded-xl border border-camp-forest/15 px-3 py-2 text-sm outline-none focus:border-camp-forest/40"
+                              >
+                                {appRoles.map((role) => (
+                                  <option key={role} value={role}>
+                                    {role.replace('_', ' ')}
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                type="submit"
+                                className="rounded-xl bg-camp-forest px-3 py-2 text-sm font-semibold text-white transition hover:bg-camp-moss"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </form>
+
+                          <form action={resetUserPassword} className="space-y-2">
+                            <input type="hidden" name="userId" value={entry.authUserId} />
+                            <label
+                              htmlFor={`password-${entry.authUserId}`}
+                              className="block text-xs font-semibold uppercase tracking-[0.2em] text-camp-moss"
+                            >
+                              Reset password
+                            </label>
+                            <div className="flex gap-2">
+                              <input
+                                id={`password-${entry.authUserId}`}
+                                name="password"
+                                type="text"
+                                placeholder="Temporary password"
+                                className="w-full rounded-xl border border-camp-forest/15 px-3 py-2 text-sm outline-none focus:border-camp-forest/40"
+                              />
+                              <button
+                                type="submit"
+                                className="rounded-xl bg-camp-sky px-3 py-2 text-sm font-semibold text-camp-forest transition hover:bg-[#b9dceb]"
+                              >
+                                Reset
+                              </button>
+                            </div>
+                          </form>
+
+                          <form action={removeUser}>
+                            <input type="hidden" name="userId" value={entry.authUserId} />
+                            <input
+                              type="hidden"
+                              name="currentUserId"
+                              value={currentAuthUserId ?? ''}
+                            />
+                            <button
+                              type="submit"
+                              className="rounded-xl border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+                            >
+                              Remove user
+                            </button>
+                          </form>
+                        </div>
                       </td>
                     </tr>
                   ))}

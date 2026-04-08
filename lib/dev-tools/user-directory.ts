@@ -1,3 +1,4 @@
+import { appRoles, type AppRole } from '@/lib/app-config';
 import { resolveDisplayName } from '@/lib/auth/auth-utils';
 import { normalizeRole } from '@/lib/auth/auth-utils';
 
@@ -30,6 +31,14 @@ export type DirectoryEntry = {
   createdAt?: string | null;
   lastSignInAt?: string | null;
 };
+
+export function normalizeRoleActionInput(value: string | undefined): AppRole {
+  return appRoles.includes(value as AppRole) ? (value as AppRole) : 'participant';
+}
+
+export function normalizePasswordResetInput(value: string | undefined) {
+  return value?.trim() ?? '';
+}
 
 export function buildDirectoryEntries(input: {
   authUsers: AuthDirectoryUser[];

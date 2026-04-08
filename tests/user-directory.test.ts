@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildDirectoryEntries } from '@/lib/dev-tools/user-directory';
+import {
+  buildDirectoryEntries,
+  normalizePasswordResetInput,
+  normalizeRoleActionInput,
+} from '@/lib/dev-tools/user-directory';
 
 describe('user directory', () => {
   it('merges auth users with linked profiles', () => {
@@ -66,5 +70,44 @@ describe('user directory', () => {
         lastSignInAt: null,
       },
     ]);
+  });
+
+  it('falls back to auth metadata for display name and formats super admin roles for the table', () => {
+    expect(
+      buildDirectoryEntries({
+        authUsers: [
+          {
+            id: 'user-3',
+            email: 'leader@example.com',
+            app_metadata: { role: 'super_admin' },
+            user_metadata: { display_name: 'Camp Lead' },
+          },
+        ],
+        profiles: [],
+      })
+    ).toEqual([
+      {
+        authUserId: 'user-3',
+        profileId: undefined,
+        email: 'leader@example.com',
+        displayName: 'Camp Lead',
+        role: 'super admin',
+        profileStatus: 'missing',
+        createdAt: null,
+        lastSignInAt: null,
+      },
+    ]);
+  });
+
+  it('normalizes role changes to supported app roles', () => {
+    expect(normalizeRoleActionInput('admin')).toBe('admin');
+    expect(normalizeRoleActionInput('not-a-role')).toBe('participant');
+    expect(normalizeRoleActionInput(undefined)).toBe('participant');
+  });
+
+  it('trims password reset input', () => {
+    expect(normalizePasswordResetInput('  temp-pass  ')).toBe('temp-pass');
+    expect(normalizePasswordResetInput('   ')).toBe('');
+    expect(normalizePasswordResetInput(undefined)).toBe('');
   });
 });
