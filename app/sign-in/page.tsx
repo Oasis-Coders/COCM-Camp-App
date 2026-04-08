@@ -13,6 +13,8 @@ type SignInPageProps = {
   }>;
 };
 
+type AuthEmailMode = 'sign-in' | 'sign-up';
+
 async function signInAs(
   role: 'super_admin' | 'admin' | 'staff' | 'participant',
   redirectTo?: string
@@ -59,17 +61,33 @@ async function signOut() {
 async function requestEmailSignIn(formData: FormData) {
   'use server';
 
+  return requestEmailAuthLink(formData, 'sign-in');
+}
+
+async function requestEmailSignUp(formData: FormData) {
+  'use server';
+
+  return requestEmailAuthLink(formData, 'sign-up');
+}
+
+async function requestEmailAuthLink(formData: FormData, mode: AuthEmailMode) {
+  'use server';
+
   const email = String(formData.get('email') ?? '').trim();
   const redirectTo = String(formData.get('redirectTo') ?? '/dashboard');
 
   if (!email) {
-    redirect(`/sign-in?error=missing-email&redirectTo=${encodeURIComponent(redirectTo)}`);
+    redirect(
+      `/sign-in?error=missing-email&mode=${mode}&redirectTo=${encodeURIComponent(redirectTo)}`
+    );
   }
 
   const supabase = await createSupabaseServerClient();
 
   if (!supabase) {
-    redirect(`/sign-in?error=supabase-unavailable&redirectTo=${encodeURIComponent(redirectTo)}`);
+    redirect(
+      `/sign-in?error=supabase-unavailable&mode=${mode}&redirectTo=${encodeURIComponent(redirectTo)}`
+    );
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
@@ -80,15 +98,15 @@ async function requestEmailSignIn(formData: FormData) {
     email,
     options: {
       emailRedirectTo: callbackUrl.toString(),
-      shouldCreateUser: false,
+      shouldCreateUser: mode === 'sign-up',
     },
   });
 
   if (error) {
-    redirect(`/sign-in?error=sign-in&redirectTo=${encodeURIComponent(redirectTo)}`);
+    redirect(`/sign-in?error=${mode}&mode=${mode}&redirectTo=${encodeURIComponent(redirectTo)}`);
   }
 
-  redirect(`/sign-in?sent=1&redirectTo=${encodeURIComponent(redirectTo)}`);
+  redirect(`/sign-in?sent=${mode}&redirectTo=${encodeURIComponent(redirectTo)}`);
 }
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
@@ -117,47 +135,93 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
           <span className="font-semibold">{supabaseReady ? 'yes' : 'no'}</span>
         </div>
 
-        {params.sent === '1' ? (
+        {params.sent === 'sign-in' ? (
           <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
             Check your email for the sign-in link. After opening it once, your session should stay
             active across normal use on desktop and phone.
           </div>
         ) : null}
 
+        {params.sent === 'sign-up' ? (
+          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+            Check your email to finish creating your account. Once you open the link, you will be
+            signed in and can keep using the app from your phone home screen without repeated
+            credential entry.
+          </div>
+        ) : null}
+
         {params.error ? (
           <div className="mt-6 rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-900">
-            Sign-in could not be completed. Confirm that your account exists and try again.
+            {params.error === 'sign-up'
+              ? 'Sign-up could not be completed. Try again or contact an admin if account creation is restricted.'
+              : 'Sign-in could not be completed. Confirm that your account exists and try again.'}
           </div>
         ) : null}
 
         {supabaseReady ? (
-          <form
-            action={requestEmailSignIn}
-            className="mt-8 rounded-[28px] border border-camp-forest/10 bg-white p-6 shadow-panel"
-          >
-            <input type="hidden" name="redirectTo" value={redirectTo || '/dashboard'} />
-            <label htmlFor="email" className="block text-sm font-semibold text-camp-forest">
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              placeholder="you@example.com"
-              className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
-            />
-            <p className="mt-3 text-sm text-slate-600">
-              Sign-up is being tracked separately so this screen stays focused on secure account
-              access for existing users.
-            </p>
-            <button
-              type="submit"
-              className="mt-5 rounded-full bg-camp-forest px-5 py-3 font-semibold text-white transition hover:bg-camp-moss"
+          <div className="mt-8 grid gap-5 lg:grid-cols-2">
+            <form
+              action={requestEmailSignIn}
+              className="rounded-[28px] border border-camp-forest/10 bg-white p-6 shadow-panel"
             >
-              Email me a sign-in link
-            </button>
-          </form>
+              <input type="hidden" name="redirectTo" value={redirectTo || '/dashboard'} />
+              <label
+                htmlFor="sign-in-email"
+                className="block text-sm font-semibold text-camp-forest"
+              >
+                Sign in with email
+              </label>
+              <input
+                id="sign-in-email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+                className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+              />
+              <p className="mt-3 text-sm text-slate-600">
+                For existing accounts. We email a secure sign-in link instead of asking you to
+                remember a password.
+              </p>
+              <button
+                type="submit"
+                className="mt-5 rounded-full bg-camp-forest px-5 py-3 font-semibold text-white transition hover:bg-camp-moss"
+              >
+                Email me a sign-in link
+              </button>
+            </form>
+
+            <form
+              action={requestEmailSignUp}
+              className="rounded-[28px] border border-camp-forest/10 bg-camp-sky/40 p-6 shadow-panel"
+            >
+              <input type="hidden" name="redirectTo" value={redirectTo || '/dashboard'} />
+              <label
+                htmlFor="sign-up-email"
+                className="block text-sm font-semibold text-camp-forest"
+              >
+                Create an account
+              </label>
+              <input
+                id="sign-up-email"
+                name="email"
+                type="email"
+                required
+                placeholder="new-user@example.com"
+                className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+              />
+              <p className="mt-3 text-sm text-slate-600">
+                For new users. We send a one-time email link that creates the account and signs you
+                in on first use.
+              </p>
+              <button
+                type="submit"
+                className="mt-5 rounded-full bg-white px-5 py-3 font-semibold text-camp-forest transition hover:bg-camp-sand"
+              >
+                Email me a sign-up link
+              </button>
+            </form>
+          </div>
         ) : (
           <div className="mt-8 grid gap-4 md:grid-cols-2">
             {(['super_admin', 'admin', 'staff', 'participant'] as const).map((role) => (
