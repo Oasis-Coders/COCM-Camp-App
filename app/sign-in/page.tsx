@@ -11,6 +11,7 @@ type SignInPageProps = {
   searchParams: Promise<{
     redirectTo?: string;
     created?: string;
+    confirmation?: string;
     error?: string;
   }>;
 };
@@ -137,7 +138,11 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   }
 
   const message = params.created
-    ? 'Account created successfully. Sign in with the email and password you just set.'
+    ? params.confirmation
+      ? 'Account created. Check your email to confirm the account before your first sign-in.'
+      : params.error === 'account-created-sign-in-needed'
+        ? 'Account created successfully. Sign in once with the email and password you just set.'
+        : 'Account created successfully. Sign in with the email and password you just set.'
     : params.error
       ? 'Sign-in could not be completed. Check your email and password and try again.'
       : undefined;
