@@ -3,6 +3,6 @@ node_modules
 .env
 .env.local
 .env.production
-pnpm-lock.yaml
 coverage
 .vercel
+tsconfig.tsbuildinfo
