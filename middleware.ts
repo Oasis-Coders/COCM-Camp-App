@@ -1,14 +1,61 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
+import { createServerClient } from '@supabase/ssr';
+
 const protectedPrefixes = ['/dashboard', '/events', '/tasks', '/check-in', '/profile', '/admin'];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   const isProtected = protectedPrefixes.some((prefix) => pathname.startsWith(prefix));
-  const isAuthenticated = request.cookies.get('camp-demo-auth')?.value === 'true';
-  const role = request.cookies.get('camp-demo-role')?.value ?? 'participant';
+  const response = NextResponse.next({
+    request,
+  });
+
+  let isAuthenticated = request.cookies.get('camp-demo-auth')?.value === 'true';
+  let role = request.cookies.get('camp-demo-role')?.value ?? 'participant';
+
+  if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+    type CookieToSet = {
+      name: string;
+      value: string;
+      options?: Parameters<typeof response.cookies.set>[2];
+    };
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+          setAll(cookiesToSet: CookieToSet[]) {
+            cookiesToSet.forEach(({ name, value, options }) => {
+              request.cookies.set(name, value);
+              response.cookies.set(name, value, options);
+            });
+          },
+        },
+      }
+    );
+
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+
+    if (user) {
+      isAuthenticated = true;
+      role =
+        (user.app_metadata?.role as string | undefined) ??
+        (user.user_metadata?.role as string | undefined) ??
+        'participant';
+    } else {
+      isAuthenticated = false;
+      role = 'participant';
+    }
+  }
 
   if (isProtected && !isAuthenticated) {
     const signInUrl = new URL('/sign-in', request.url);
@@ -20,7 +67,7 @@ export function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return NextResponse.next();
+  return response;
 }
 
 export const config = {

@@ -1,11 +1,18 @@
-insert into public.profiles (id, email, display_name)
+insert into public.profiles (
+  id,
+  email,
+  first_name,
+  last_name,
+  preferred_name,
+  display_name
+)
 values
-  ('11111111-1111-1111-1111-111111111111', 'super-admin@demo.local', 'Demo Super Admin'),
-  ('22222222-2222-2222-2222-222222222222', 'admin@demo.local', 'Demo Admin'),
-  ('33333333-3333-3333-3333-333333333333', 'staff@demo.local', 'Demo Staff'),
-  ('44444444-4444-4444-4444-444444444444', 'participant1@demo.local', 'Demo Participant One'),
-  ('55555555-5555-5555-5555-555555555555', 'participant2@demo.local', 'Demo Participant Two'),
-  ('66666666-6666-6666-6666-666666666666', 'participant3@demo.local', 'Demo Participant Three')
+  ('11111111-1111-1111-1111-111111111111', 'super-admin@demo.local', 'Super', 'Admin', 'Super', 'Super Admin'),
+  ('22222222-2222-2222-2222-222222222222', 'admin@demo.local', 'Camp', 'Admin', 'Admin', 'Admin'),
+  ('33333333-3333-3333-3333-333333333333', 'staff@demo.local', 'Camp', 'Staff', 'Staff', 'Staff'),
+  ('44444444-4444-4444-4444-444444444444', 'participant1@demo.local', 'Participant', 'One', 'P1', 'P1'),
+  ('55555555-5555-5555-5555-555555555555', 'participant2@demo.local', 'Participant', 'Two', 'P2', 'P2'),
+  ('66666666-6666-6666-6666-666666666666', 'participant3@demo.local', 'Participant', 'Three', 'P3', 'P3')
 on conflict (id) do nothing;
 
 insert into public.roles (id, name, description)

@@ -1,6 +1,9 @@
 import { cookies } from 'next/headers';
 
 import type { AppRole } from '@/lib/app-config';
+import { normalizeRole, resolveDisplayName, resolveUserRole } from '@/lib/auth/auth-utils';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { hasSupabaseEnv } from '@/lib/supabase/env';
 
 export type DemoSession = {
   isAuthenticated: boolean;
@@ -10,22 +13,34 @@ export type DemoSession = {
   mode: 'demo' | 'supabase';
 };
 
-const defaultRole: AppRole = 'participant';
+export async function getSession(): Promise<DemoSession> {
+  if (hasSupabaseEnv()) {
+    const supabase = await createSupabaseServerClient();
+    const {
+      data: { user },
+    } = supabase ? await supabase.auth.getUser() : { data: { user: null } };
 
-function normalizeRole(value: string | undefined): AppRole {
-  if (
-    value === 'super_admin' ||
-    value === 'admin' ||
-    value === 'staff' ||
-    value === 'participant'
-  ) {
-    return value;
+    if (user) {
+      const role = resolveUserRole({
+        appRole: user.app_metadata?.role as string | undefined,
+        userRole: user.user_metadata?.role as string | undefined,
+      });
+      const displayName = resolveDisplayName({
+        displayName: user.user_metadata?.display_name as string | undefined,
+        fullName: user.user_metadata?.full_name as string | undefined,
+        email: user.email,
+      });
+
+      return {
+        isAuthenticated: true,
+        role,
+        email: user.email ?? 'unknown@example.com',
+        displayName,
+        mode: 'supabase',
+      };
+    }
   }
 
-  return defaultRole;
-}
-
-export async function getSession(): Promise<DemoSession> {
   const store = await cookies();
   const authCookie = store.get('camp-demo-auth')?.value;
   const role = normalizeRole(store.get('camp-demo-role')?.value);
