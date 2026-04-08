@@ -8,6 +8,11 @@ export type SignUpProfileInput = {
   preferredName?: string;
 };
 
+export type EditableAccountInput = SignUpProfileInput & {
+  email?: string;
+  password?: string;
+};
+
 export function normalizeRole(value: string | undefined): AppRole {
   if (
     value === 'super_admin' ||
@@ -57,4 +62,24 @@ export function buildSignUpMetadata(input: SignUpProfileInput) {
     full_name: [firstName, lastName].filter(Boolean).join(' ') || undefined,
     display_name: preferredName || [firstName, lastName].filter(Boolean).join(' ') || undefined,
   };
+}
+
+export function normalizeEditableAccountInput(input: EditableAccountInput) {
+  return {
+    firstName: input.firstName?.trim() ?? '',
+    lastName: input.lastName?.trim() ?? '',
+    preferredName: input.preferredName?.trim() ?? '',
+    email: input.email?.trim() ?? '',
+    password: input.password ?? '',
+  };
+}
+
+export function hasCredentialChanges(
+  input: Pick<EditableAccountInput, 'email' | 'password'>,
+  currentEmail?: string
+) {
+  const normalizedEmail = input.email?.trim() ?? '';
+  const normalizedCurrentEmail = currentEmail?.trim() ?? '';
+
+  return Boolean(input.password || (normalizedEmail && normalizedEmail !== normalizedCurrentEmail));
 }

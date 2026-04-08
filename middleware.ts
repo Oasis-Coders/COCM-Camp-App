@@ -3,7 +3,15 @@ import { NextResponse } from 'next/server';
 
 import { createServerClient } from '@supabase/ssr';
 
-const protectedPrefixes = ['/dashboard', '/events', '/tasks', '/check-in', '/profile', '/admin'];
+const protectedPrefixes = [
+  '/dashboard',
+  '/events',
+  '/tasks',
+  '/check-in',
+  '/profile',
+  '/dev-tools',
+  '/admin',
+];
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -77,6 +85,7 @@ export const config = {
     '/tasks/:path*',
     '/check-in/:path*',
     '/profile/:path*',
+    '/dev-tools/:path*',
     '/admin/:path*',
   ],
 };

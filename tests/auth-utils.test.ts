@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildSignUpMetadata,
+  hasCredentialChanges,
+  normalizeEditableAccountInput,
   normalizeRole,
   resolveDisplayName,
   resolveUserRole,
@@ -98,5 +100,55 @@ describe('auth utils', () => {
       full_name: 'Jamie Rivera',
       display_name: 'Jamie Rivera',
     });
+  });
+
+  it('normalizes editable account input', () => {
+    expect(
+      normalizeEditableAccountInput({
+        firstName: '  Luke ',
+        lastName: '  Fields  ',
+        preferredName: '  LQ ',
+        email: '  luke@example.com ',
+        password: 'secret',
+      })
+    ).toEqual({
+      firstName: 'Luke',
+      lastName: 'Fields',
+      preferredName: 'LQ',
+      email: 'luke@example.com',
+      password: 'secret',
+    });
+  });
+
+  it('detects meaningful credential changes', () => {
+    expect(
+      hasCredentialChanges(
+        {
+          email: 'luke@example.com',
+          password: '',
+        },
+        'luke@example.com'
+      )
+    ).toBe(false);
+
+    expect(
+      hasCredentialChanges(
+        {
+          email: 'new@example.com',
+          password: '',
+        },
+        'luke@example.com'
+      )
+    ).toBe(true);
+
+    expect(
+      hasCredentialChanges(
+        {
+          email: 'luke@example.com',
+          password: 'updated-password',
+        },
+        'luke@example.com'
+      )
+    ).toBe(true);
   });
 });
