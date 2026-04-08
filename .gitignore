@@ -6,3 +6,5 @@ node_modules
 coverage
 .vercel
 tsconfig.tsbuildinfo
+supabase/.branches
+supabase/.temp

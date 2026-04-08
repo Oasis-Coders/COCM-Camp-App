@@ -71,7 +71,14 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  if (pathname.startsWith('/admin') && !['super_admin', 'admin', 'staff'].includes(role)) {
+  const isStaffOrHigher = ['super_admin', 'admin', 'staff'].includes(role);
+  const isAdminOrHigher = ['super_admin', 'admin'].includes(role);
+
+  if ((pathname.startsWith('/admin') || pathname.startsWith('/check-in')) && !isStaffOrHigher) {
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
+  if (pathname.startsWith('/dev-tools') && !isAdminOrHigher) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

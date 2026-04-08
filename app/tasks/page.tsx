@@ -1,33 +1,37 @@
 import { AppShell } from '@/components/layout/app-shell';
-import { sampleTasks } from '@/lib/app-config';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { TaskList, type TaskWithProfile } from './task-list';
 
 export default async function TasksPage() {
+  const supabase = await createSupabaseServerClient();
+
+  const { data: authData } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
+  const userId = authData.user?.id;
+
+  const { data: rawTasks } = await (supabase
+    ?.from('tasks')
+    .select(
+      `
+      id,
+      title,
+      description,
+      status,
+      priority,
+      due_at,
+      assigned_to:profiles!tasks_assigned_to_fkey(
+        display_name,
+        first_name,
+        last_name
+      )
+    `
+    )
+    .order('created_at', { ascending: false }) ?? { data: [] });
+
+  const tasks = (rawTasks as unknown as TaskWithProfile[]) || [];
+
   return (
     <AppShell title="Tasks" eyebrow="Authenticated area">
-      <div className="grid gap-4">
-        {sampleTasks.map((task) => (
-          <article
-            key={task.title}
-            className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel"
-          >
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h3 className="font-semibold text-camp-forest">{task.title}</h3>
-                <p className="mt-1 text-sm text-slate-600">Owner: {task.owner}</p>
-              </div>
-              <div className="text-sm text-slate-600">
-                <p>
-                  Status:{' '}
-                  <span className="font-semibold capitalize">{task.status.replace('_', ' ')}</span>
-                </p>
-                <p>
-                  Priority: <span className="font-semibold capitalize">{task.priority}</span>
-                </p>
-              </div>
-            </div>
-          </article>
-        ))}
-      </div>
+      <TaskList tasks={tasks} currentUserId={userId} />
     </AppShell>
   );
 }

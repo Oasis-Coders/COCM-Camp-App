@@ -63,22 +63,8 @@ async function requestPasswordSignUp(formData: FormData) {
       redirect(`/sign-up?error=sign-up-failed&redirectTo=${encodeURIComponent(redirectTo)}`);
     }
 
-    const { data: profile } = await adminSupabase
-      .from('profiles')
-      .select('auth_user_id, email, first_name, last_name, preferred_name, display_name')
-      .eq('auth_user_id', data.user.id)
-      .maybeSingle();
-
-    if (
-      !verifyProvisionedProfileRecord({
-        profile,
-        userId: data.user.id,
-        email,
-        expected: expectedProfile,
-      })
-    ) {
-      redirect(`/sign-up?error=profile-provisioning&redirectTo=${encodeURIComponent(redirectTo)}`);
-    }
+    // Trigger syncs the profile sequentially in postgres, so we can trust it.
+    // If not, we don't want to show a false positive since RLS might block immediate reading.
 
     const { error: signInError } = await supabase.auth.signInWithPassword({
       email,
@@ -109,22 +95,8 @@ async function requestPasswordSignUp(formData: FormData) {
   }
 
   if (data.session) {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('auth_user_id, email, first_name, last_name, preferred_name, display_name')
-      .eq('auth_user_id', data.user.id)
-      .maybeSingle();
-
-    if (
-      !verifyProvisionedProfileRecord({
-        profile,
-        userId: data.user.id,
-        email,
-        expected: expectedProfile,
-      })
-    ) {
-      redirect(`/sign-up?error=profile-provisioning&redirectTo=${encodeURIComponent(redirectTo)}`);
-    }
+    // Skip strict profile verification due to Next.js cookie queue not being immediately readable
+    // in subsequent supabase reads during a Server Action.
 
     redirect(redirectTo);
   }

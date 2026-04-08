@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { SignOutButton } from '@/components/auth/sign-out-button';
 import { navItems } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
 import { cn } from '@/lib/utils';
@@ -50,6 +51,12 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
                 </Link>
               ))}
           </nav>
+
+          {session.isAuthenticated && (
+            <div className="mt-4">
+              <SignOutButton />
+            </div>
+          )}
         </aside>
 
         <main className="flex-1">
