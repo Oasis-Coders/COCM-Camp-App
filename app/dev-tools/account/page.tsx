@@ -277,10 +277,10 @@ export default async function AccountToolPage({ searchParams }: AccountToolPageP
 
       <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
         <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
-          <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Current identity</p>
-          <h3 className="mt-3 font-serif text-2xl text-camp-forest">Credential snapshot</h3>
+          <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Account details</p>
+          <h3 className="mt-3 font-serif text-2xl text-camp-forest">Your current identity</h3>
           <p className="mt-3 max-w-2xl text-sm text-slate-600">
-            Development surface for viewing and editing the currently signed-in account.
+            Development surface for viewing and editing the currently signed-in account only.
           </p>
 
           <dl className="mt-6 grid gap-4 text-sm text-slate-700 md:grid-cols-2">
@@ -313,7 +313,7 @@ export default async function AccountToolPage({ searchParams }: AccountToolPageP
 
         <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Notes</p>
-          <h3 className="mt-3 font-serif text-2xl text-camp-forest">How this tool behaves</h3>
+          <h3 className="mt-3 font-serif text-2xl text-camp-forest">How account details behave</h3>
           <ul className="mt-4 space-y-3 text-sm text-slate-700">
             <li>Profile edits update the `profiles` row and Supabase auth metadata together.</li>
             <li>Email and password updates affect the currently signed-in account only.</li>
