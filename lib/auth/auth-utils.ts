@@ -15,10 +15,7 @@ export function normalizeRole(value: string | undefined): AppRole {
   return defaultRole;
 }
 
-export function resolveUserRole(metadata: {
-  appRole?: string;
-  userRole?: string;
-}): AppRole {
+export function resolveUserRole(metadata: { appRole?: string; userRole?: string }): AppRole {
   return normalizeRole(metadata.appRole ?? metadata.userRole);
 }
 

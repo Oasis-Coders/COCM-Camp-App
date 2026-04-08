@@ -131,7 +131,10 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
         ) : null}
 
         {supabaseReady ? (
-          <form action={requestEmailSignIn} className="mt-8 rounded-[28px] border border-camp-forest/10 bg-white p-6 shadow-panel">
+          <form
+            action={requestEmailSignIn}
+            className="mt-8 rounded-[28px] border border-camp-forest/10 bg-white p-6 shadow-panel"
+          >
             <input type="hidden" name="redirectTo" value={redirectTo || '/dashboard'} />
             <label htmlFor="email" className="block text-sm font-semibold text-camp-forest">
               Email address
