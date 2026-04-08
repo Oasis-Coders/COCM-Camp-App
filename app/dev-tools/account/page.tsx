@@ -241,13 +241,7 @@ function getCredentialMessage(status: string | undefined) {
   }
 }
 
-function Alert({
-  tone,
-  text,
-}: {
-  tone: 'success' | 'error';
-  text: string;
-}) {
+function Alert({ tone, text }: { tone: 'success' | 'error'; text: string }) {
   return (
     <div
       className={`rounded-2xl border px-4 py-3 text-sm ${

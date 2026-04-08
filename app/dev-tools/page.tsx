@@ -30,8 +30,8 @@ export default async function DevToolsPage() {
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Tool hub</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">Developer menu</h3>
           <p className="mt-3 max-w-2xl text-sm text-slate-600">
-            This page is the entry point for temporary development utilities. Each tool gets its
-            own route so we can expand the set without cluttering the main app shell.
+            This page is the entry point for temporary development utilities. Each tool gets its own
+            route so we can expand the set without cluttering the main app shell.
           </p>
 
           <div className="mt-6 grid gap-4">
