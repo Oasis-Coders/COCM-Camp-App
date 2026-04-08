@@ -1,7 +1,7 @@
-import { cookies } from "next/headers";
-import { createServerClient } from "@supabase/ssr";
+import { cookies } from 'next/headers';
+import { createServerClient } from '@supabase/ssr';
 
-import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { hasSupabaseEnv } from '@/lib/supabase/env';
 
 export async function createSupabaseServerClient() {
   if (!hasSupabaseEnv()) {
@@ -27,8 +27,8 @@ export async function createSupabaseServerClient() {
           cookiesToSet.forEach(({ name, value, options }) => {
             cookieStore.set(name, value, options);
           });
-        }
-      }
+        },
+      },
     }
   );
 }

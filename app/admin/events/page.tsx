@@ -1,7 +1,7 @@
-import Link from "next/link";
+import Link from 'next/link';
 
-import { AppShell } from "@/components/layout/app-shell";
-import { sampleEvents } from "@/lib/app-config";
+import { AppShell } from '@/components/layout/app-shell';
+import { sampleEvents } from '@/lib/app-config';
 
 export default async function AdminEventsPage() {
   return (

@@ -16,7 +16,7 @@ html {
 
 body {
   margin: 0;
-  font-family: var(--font-sans, "Trebuchet MS", "Segoe UI", sans-serif);
+  font-family: var(--font-sans, 'Trebuchet MS', 'Segoe UI', sans-serif);
 }
 
 a {

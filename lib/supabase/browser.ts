@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { createBrowserClient } from "@supabase/ssr";
+import { createBrowserClient } from '@supabase/ssr';
 
-import { hasSupabaseEnv } from "@/lib/supabase/env";
+import { hasSupabaseEnv } from '@/lib/supabase/env';
 
 export function createSupabaseBrowserClient() {
   if (!hasSupabaseEnv()) {

@@ -3,15 +3,15 @@ name: Supabase DB
 on:
   pull_request:
     paths:
-      - "supabase/**"
-      - ".github/workflows/supabase-db.yml"
+      - 'supabase/**'
+      - '.github/workflows/supabase-db.yml'
   push:
     branches:
       - main
       - develop
     paths:
-      - "supabase/**"
-      - ".github/workflows/supabase-db.yml"
+      - 'supabase/**'
+      - '.github/workflows/supabase-db.yml'
 
 jobs:
   validate:
