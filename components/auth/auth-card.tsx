@@ -98,7 +98,7 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
                 htmlFor="preferredName"
                 className="mt-5 block text-sm font-semibold text-camp-forest"
               >
-                Preferred name
+                Preferred name <span className="font-normal text-slate-500">(optional)</span>
               </label>
               <input
                 id="preferredName"
@@ -140,6 +140,12 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
             placeholder={mode === 'sign-in' ? 'Enter your password' : 'Create a password'}
             className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
           />
+
+          {mode === 'sign-up' ? (
+            <p className="mt-4 text-sm text-slate-500">
+              Fields marked optional can be filled in later from your profile.
+            </p>
+          ) : null}
 
           <button
             type="submit"
