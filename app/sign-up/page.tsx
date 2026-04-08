@@ -71,7 +71,7 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
   }
 
   const message = params.error
-    ? 'Sign-up could not be completed. Make sure the required profile fields are filled, use a strong password, and check whether account creation is enabled in Supabase.'
+    ? 'Sign-up could not be completed. Make sure the required profile fields are filled and check whether account creation is enabled in Supabase.'
     : undefined;
 
   return (

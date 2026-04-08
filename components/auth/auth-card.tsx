@@ -135,7 +135,6 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
             name="password"
             type="password"
             required
-            minLength={8}
             autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
             placeholder={mode === 'sign-in' ? 'Enter your password' : 'Create a password'}
             className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
