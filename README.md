@@ -1,6 +1,12 @@
 # Camp Management App
 
-This project is building a shared web app to help run camps and events with less manual coordination. The goal is to give staff, admins, and participants one place for sign-in, event registration, task tracking, and check-in, while leaving room for future features like chat and richer operations tools.
+A collaborative web app for running camps and events with less manual coordination. The goal is to give staff, admins, and participants one place for sign-in, event registration, task tracking, and check-in, with room for future chat and realtime collaboration.
+
+## Live app
+
+- Production URL: [https://cocm-camp-app.vercel.app](https://cocm-camp-app.vercel.app)
+- Repository: [https://github.com/Oasis-Coders/COCM-Camp-App](https://github.com/Oasis-Coders/COCM-Camp-App)
+- CI runs: [https://github.com/Oasis-Coders/COCM-Camp-App/actions](https://github.com/Oasis-Coders/COCM-Camp-App/actions)
 
 ## Why we are building this
 
@@ -21,7 +27,7 @@ The long-term product direction includes:
 
 ## Current phase
 
-We are in the infrastructure and foundation phase.
+We are currently in the infrastructure and foundation phase.
 
 That means the current priority is:
 
@@ -33,7 +39,7 @@ That means the current priority is:
 
 This phase is successful when the team has a stable base to build on and new contributors can join without needing to reconstruct the project direction from scratch.
 
-## Delivery plan
+## Delivery roadmap
 
 ### Phase 0: Foundation
 
@@ -73,7 +79,7 @@ This phase prepares the app for more live collaboration:
 - Realtime direction behind a feature flag
 - Early event-room communication model
 
-## What we are intentionally not doing yet
+## Out of scope for now
 
 To keep the project healthy, we are deliberately not trying to build everything at once.
 
@@ -95,7 +101,7 @@ These are the standards we want to keep returning to as we make decisions:
 - Use roles and permissions thoughtfully from the start
 - Make it easy for future contributors to understand why the app works the way it does
 
-## How collaborators can contribute
+## How to contribute
 
 You do not need to take on the whole system to help meaningfully. Good contributions can come from many directions.
 
@@ -110,7 +116,7 @@ Useful contribution areas:
 
 When contributing, it helps to anchor work to one of the current phases so the repo keeps moving forward as a team instead of scattering into unrelated experiments.
 
-## Working style for the project
+## Team working style
 
 We want the repo to feel collaborative, steady, and easy to join.
 
@@ -121,7 +127,7 @@ That means:
 - We should leave clear notes when decisions are intentionally deferred
 - New teammates should be able to read this project and understand where it is going
 
-## What success looks like
+## Success criteria
 
 This project is on track when:
 
@@ -130,6 +136,6 @@ This project is on track when:
 - The app steadily grows from foundation to real workflows
 - Operational users can eventually rely on it during real camp events
 
-## Short version
+## Project snapshot
 
 We are building a camp and event operations app in phases. Right now the mission is to create a clean, collaborative foundation for authentication, permissions, events, tasks, and check-in so the team can confidently build the real product on top of it.
