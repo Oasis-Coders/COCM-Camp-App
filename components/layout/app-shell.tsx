@@ -1,8 +1,8 @@
-import Link from "next/link";
+import Link from 'next/link';
 
-import { navItems } from "@/lib/app-config";
-import { getSession } from "@/lib/auth/session";
-import { cn } from "@/lib/utils";
+import { navItems } from '@/lib/app-config';
+import { getSession } from '@/lib/auth/session';
+import { cn } from '@/lib/utils';
 
 type AppShellProps = {
   title: string;
@@ -29,7 +29,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
             <p className="font-semibold text-camp-forest">{session.displayName}</p>
             <p className="text-slate-700">{session.email}</p>
             <p className="mt-2 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-camp-forest">
-              {session.role.replace("_", " ")}
+              {session.role.replace('_', ' ')}
             </p>
           </div>
 
@@ -41,8 +41,8 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    "block rounded-2xl border border-transparent px-4 py-3 transition hover:border-camp-forest/20 hover:bg-white",
-                    title === item.label && "border-camp-forest/15 bg-white"
+                    'block rounded-2xl border border-transparent px-4 py-3 transition hover:border-camp-forest/20 hover:bg-white',
+                    title === item.label && 'border-camp-forest/15 bg-white'
                   )}
                 >
                   <span className="block font-semibold text-camp-forest">{item.label}</span>
@@ -59,7 +59,8 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
               <div>
                 <h2 className="font-serif text-4xl text-camp-forest">{title}</h2>
                 <p className="mt-2 max-w-2xl text-slate-600">
-                  Demo auth keeps the shell usable immediately. Supabase helpers and route boundaries are ready to wire into a real project as soon as keys are added.
+                  Demo auth keeps the shell usable immediately. Supabase helpers and route
+                  boundaries are ready to wire into a real project as soon as keys are added.
                 </p>
               </div>
               <div className="rounded-2xl bg-camp-sky px-4 py-3 text-sm text-camp-forest">

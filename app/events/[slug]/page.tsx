@@ -1,8 +1,8 @@
-import { notFound } from "next/navigation";
+import { notFound } from 'next/navigation';
 
-import { AppShell } from "@/components/layout/app-shell";
-import { EmptyState } from "@/components/layout/empty-state";
-import { sampleEvents } from "@/lib/app-config";
+import { AppShell } from '@/components/layout/app-shell';
+import { EmptyState } from '@/components/layout/empty-state';
+import { sampleEvents } from '@/lib/app-config';
 
 type EventDetailProps = {
   params: Promise<{

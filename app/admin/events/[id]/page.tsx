@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/layout/app-shell";
-import { EmptyState } from "@/components/layout/empty-state";
+import { AppShell } from '@/components/layout/app-shell';
+import { EmptyState } from '@/components/layout/empty-state';
 
 type AdminEventDetailProps = {
   params: Promise<{

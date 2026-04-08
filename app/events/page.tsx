@@ -1,7 +1,7 @@
-import Link from "next/link";
+import Link from 'next/link';
 
-import { AppShell } from "@/components/layout/app-shell";
-import { sampleEvents } from "@/lib/app-config";
+import { AppShell } from '@/components/layout/app-shell';
+import { sampleEvents } from '@/lib/app-config';
 
 export default async function EventsPage() {
   return (
@@ -19,7 +19,9 @@ export default async function EventsPage() {
                 <p className="mt-2 text-slate-600">{event.location}</p>
               </div>
               <div className="text-sm text-slate-600">
-                <p>Status: <span className="font-semibold capitalize">{event.status}</span></p>
+                <p>
+                  Status: <span className="font-semibold capitalize">{event.status}</span>
+                </p>
                 <p>Starts: {new Date(event.startsAt).toLocaleString()}</p>
               </div>
             </div>

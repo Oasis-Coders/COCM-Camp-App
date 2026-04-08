@@ -1,5 +1,5 @@
-import { AppShell } from "@/components/layout/app-shell";
-import { getSession } from "@/lib/auth/session";
+import { AppShell } from '@/components/layout/app-shell';
+import { getSession } from '@/lib/auth/session';
 
 export default async function ProfilePage() {
   const session = await getSession();
@@ -19,7 +19,7 @@ export default async function ProfilePage() {
           </div>
           <div>
             <dt className="font-semibold text-camp-moss">Role</dt>
-            <dd className="capitalize">{session.role.replace("_", " ")}</dd>
+            <dd className="capitalize">{session.role.replace('_', ' ')}</dd>
           </div>
         </dl>
       </article>

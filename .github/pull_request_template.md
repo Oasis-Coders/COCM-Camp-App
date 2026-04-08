@@ -29,7 +29,7 @@ Please describe the tests that you ran to verify your changes. Provide instructi
 - [ ] I ran `pnpm format:check` and all files are correctly formatted
 - [ ] I ran `pnpm typecheck` successfully
 - [ ] I ran `pnpm test` and all tests passed
-- [ ] Manual testing (Please specify: __________)
+- [ ] Manual testing (Please specify: ****\_\_****)
 
 ## Checklist:
 

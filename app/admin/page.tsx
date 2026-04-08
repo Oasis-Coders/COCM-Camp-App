@@ -1,12 +1,12 @@
-import Link from "next/link";
+import Link from 'next/link';
 
-import { AppShell } from "@/components/layout/app-shell";
+import { AppShell } from '@/components/layout/app-shell';
 
 const adminLinks = [
-  { href: "/admin/events", label: "Manage events" },
-  { href: "/admin/tasks", label: "Manage tasks" },
-  { href: "/admin/checkins", label: "Manage check-ins" },
-  { href: "/admin/users", label: "Manage users" }
+  { href: '/admin/events', label: 'Manage events' },
+  { href: '/admin/tasks', label: 'Manage tasks' },
+  { href: '/admin/checkins', label: 'Manage check-ins' },
+  { href: '/admin/users', label: 'Manage users' },
 ];
 
 export default async function AdminPage() {
