@@ -58,7 +58,10 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
             <>
               <div className="grid gap-5 md:grid-cols-2">
                 <div>
-                  <label htmlFor="firstName" className="block text-sm font-semibold text-camp-forest">
+                  <label
+                    htmlFor="firstName"
+                    className="block text-sm font-semibold text-camp-forest"
+                  >
                     First name
                   </label>
                   <input
@@ -73,7 +76,10 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
                 </div>
 
                 <div>
-                  <label htmlFor="lastName" className="block text-sm font-semibold text-camp-forest">
+                  <label
+                    htmlFor="lastName"
+                    className="block text-sm font-semibold text-camp-forest"
+                  >
                     Last name
                   </label>
                   <input
@@ -107,7 +113,7 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
 
           <label
             htmlFor="email"
-            className={`${mode === 'sign-up' ? 'mt-5 ' : ''}block text-sm font-semibold text-camp-forest`}
+            className={`${mode === 'sign-up' ? 'mt-5' : ''} block text-sm font-semibold text-camp-forest`}
           >
             Email address
           </label>
