@@ -2,9 +2,14 @@ import { redirect } from 'next/navigation';
 
 import { AuthCard } from '@/components/auth/auth-card';
 import { getSession } from '@/lib/auth/session';
-import { buildSignUpMetadata, sanitizeRedirectTo } from '@/lib/auth/auth-utils';
+import {
+  buildSignUpMetadata,
+  sanitizeRedirectTo,
+  verifyProvisionedProfileRecord,
+} from '@/lib/auth/auth-utils';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { hasSupabaseEnv } from '@/lib/supabase/env';
+import { hasSupabaseAdminEnv, hasSupabaseEnv } from '@/lib/supabase/env';
 
 type SignUpPageProps = {
   searchParams: Promise<{
@@ -33,27 +38,98 @@ async function requestPasswordSignUp(formData: FormData) {
     redirect(`/sign-up?error=supabase-unavailable&redirectTo=${encodeURIComponent(redirectTo)}`);
   }
 
+  const expectedProfile = {
+    firstName,
+    lastName,
+    preferredName,
+  };
+  const metadata = buildSignUpMetadata(expectedProfile);
+
+  if (hasSupabaseAdminEnv()) {
+    const adminSupabase = createSupabaseAdminClient();
+
+    if (!adminSupabase) {
+      redirect(`/sign-up?error=admin-unavailable&redirectTo=${encodeURIComponent(redirectTo)}`);
+    }
+
+    const { data, error } = await adminSupabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true,
+      user_metadata: metadata,
+    });
+
+    if (error || !data.user) {
+      redirect(`/sign-up?error=sign-up-failed&redirectTo=${encodeURIComponent(redirectTo)}`);
+    }
+
+    const { data: profile } = await adminSupabase
+      .from('profiles')
+      .select('auth_user_id, email, first_name, last_name, preferred_name, display_name')
+      .eq('auth_user_id', data.user.id)
+      .maybeSingle();
+
+    if (
+      !verifyProvisionedProfileRecord({
+        profile,
+        userId: data.user.id,
+        email,
+        expected: expectedProfile,
+      })
+    ) {
+      redirect(`/sign-up?error=profile-provisioning&redirectTo=${encodeURIComponent(redirectTo)}`);
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      redirect(
+        `/sign-in?created=1&error=account-created-sign-in-needed&redirectTo=${encodeURIComponent(
+          redirectTo
+        )}`
+      );
+    }
+
+    redirect(redirectTo);
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
-      data: buildSignUpMetadata({
-        firstName,
-        lastName,
-        preferredName,
-      }),
+      data: metadata,
     },
   });
 
-  if (error) {
+  if (error || !data.user) {
     redirect(`/sign-up?error=sign-up-failed&redirectTo=${encodeURIComponent(redirectTo)}`);
   }
 
-  if (!data.session) {
-    redirect(`/sign-in?created=1&redirectTo=${encodeURIComponent(redirectTo)}`);
+  if (data.session) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('auth_user_id, email, first_name, last_name, preferred_name, display_name')
+      .eq('auth_user_id', data.user.id)
+      .maybeSingle();
+
+    if (
+      !verifyProvisionedProfileRecord({
+        profile,
+        userId: data.user.id,
+        email,
+        expected: expectedProfile,
+      })
+    ) {
+      redirect(`/sign-up?error=profile-provisioning&redirectTo=${encodeURIComponent(redirectTo)}`);
+    }
+
+    redirect(redirectTo);
   }
 
-  redirect(redirectTo);
+  redirect(`/sign-in?created=1&confirmation=1&redirectTo=${encodeURIComponent(redirectTo)}`);
 }
 
 export default async function SignUpPage({ searchParams }: SignUpPageProps) {
@@ -70,9 +146,14 @@ export default async function SignUpPage({ searchParams }: SignUpPageProps) {
     redirect('/sign-in');
   }
 
-  const message = params.error
-    ? 'Sign-up could not be completed. Make sure the required profile fields are filled and check whether account creation is enabled in Supabase.'
-    : undefined;
+  const message =
+    params.error === 'profile-provisioning'
+      ? 'The account was created, but the linked profile record was not provisioned correctly in the database.'
+      : params.error === 'admin-unavailable'
+        ? 'Account creation needs the Supabase service role key in this environment.'
+        : params.error
+          ? 'Sign-up could not be completed. Make sure the required profile fields are filled and check whether account creation is enabled in Supabase.'
+          : undefined;
 
   return (
     <AuthCard

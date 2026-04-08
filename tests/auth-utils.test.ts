@@ -8,6 +8,7 @@ import {
   resolveDisplayName,
   resolveUserRole,
   sanitizeRedirectTo,
+  verifyProvisionedProfileRecord,
 } from '@/lib/auth/auth-utils';
 
 describe('auth utils', () => {
@@ -150,5 +151,58 @@ describe('auth utils', () => {
         'luke@example.com'
       )
     ).toBe(true);
+  });
+
+  it('verifies a provisioned profile row matches the created account details', () => {
+    expect(
+      verifyProvisionedProfileRecord({
+        userId: 'user-123',
+        email: 'jamie@example.com',
+        expected: {
+          firstName: 'Jamie',
+          lastName: 'Rivera',
+          preferredName: 'Jay',
+        },
+        profile: {
+          auth_user_id: 'user-123',
+          email: 'jamie@example.com',
+          first_name: 'Jamie',
+          last_name: 'Rivera',
+          preferred_name: 'Jay',
+          display_name: 'Jay',
+        },
+      })
+    ).toBe(true);
+
+    expect(
+      verifyProvisionedProfileRecord({
+        userId: 'user-123',
+        email: 'jamie@example.com',
+        expected: {
+          firstName: 'Jamie',
+          lastName: 'Rivera',
+        },
+        profile: {
+          auth_user_id: 'user-123',
+          email: 'jamie@example.com',
+          first_name: 'Jamie',
+          last_name: 'Rivera',
+          preferred_name: null,
+          display_name: 'Wrong Name',
+        },
+      })
+    ).toBe(false);
+
+    expect(
+      verifyProvisionedProfileRecord({
+        userId: 'user-123',
+        email: 'jamie@example.com',
+        expected: {
+          firstName: 'Jamie',
+          lastName: 'Rivera',
+        },
+        profile: null,
+      })
+    ).toBe(false);
   });
 });

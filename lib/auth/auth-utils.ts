@@ -13,6 +13,15 @@ export type EditableAccountInput = SignUpProfileInput & {
   password?: string;
 };
 
+export type ProvisionedProfileRecord = {
+  auth_user_id?: string | null;
+  email?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  preferred_name?: string | null;
+  display_name?: string | null;
+};
+
 export function normalizeRole(value: string | undefined): AppRole {
   if (
     value === 'super_admin' ||
@@ -82,4 +91,26 @@ export function hasCredentialChanges(
   const normalizedCurrentEmail = currentEmail?.trim() ?? '';
 
   return Boolean(input.password || (normalizedEmail && normalizedEmail !== normalizedCurrentEmail));
+}
+
+export function verifyProvisionedProfileRecord(input: {
+  profile: ProvisionedProfileRecord | null;
+  userId: string;
+  email: string;
+  expected: SignUpProfileInput;
+}) {
+  const metadata = buildSignUpMetadata(input.expected);
+
+  if (!input.profile) {
+    return false;
+  }
+
+  return (
+    input.profile.auth_user_id === input.userId &&
+    input.profile.email === input.email &&
+    input.profile.first_name === metadata.first_name &&
+    input.profile.last_name === metadata.last_name &&
+    (input.profile.preferred_name ?? null) === (metadata.preferred_name ?? null) &&
+    (input.profile.display_name ?? null) === (metadata.display_name ?? null)
+  );
 }
