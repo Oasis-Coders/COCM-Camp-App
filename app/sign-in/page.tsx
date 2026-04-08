@@ -1,4 +1,4 @@
-import { cookies } from 'next/headers';
+import { cookies, headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 
 import { createSupabaseServerClient } from '@/lib/supabase/server';
@@ -90,7 +90,17 @@ async function requestEmailAuthLink(formData: FormData, mode: AuthEmailMode) {
     );
   }
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000';
+  const headerStore = await headers();
+  const origin = headerStore.get('origin');
+  const forwardedHost = headerStore.get('x-forwarded-host') ?? headerStore.get('host');
+  const forwardedProto =
+    headerStore.get('x-forwarded-proto') ??
+    (origin ? new URL(origin).protocol.replace(':', '') : null);
+  const appUrl =
+    origin ??
+    (forwardedHost ? `${forwardedProto ?? 'https'}://${forwardedHost}` : null) ??
+    process.env.NEXT_PUBLIC_APP_URL ??
+    'http://localhost:3000';
   const callbackUrl = new URL('/auth/callback', appUrl);
   callbackUrl.searchParams.set('redirectTo', redirectTo);
 
