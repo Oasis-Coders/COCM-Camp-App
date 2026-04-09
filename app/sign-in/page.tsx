@@ -56,7 +56,7 @@ async function signOut() {
   cookieStore.delete('camp-demo-role');
   cookieStore.delete('camp-demo-email');
   cookieStore.delete('camp-demo-name');
-  redirect('/');
+  redirect('/sign-in');
 }
 
 async function requestPasswordSignIn(formData: FormData) {
