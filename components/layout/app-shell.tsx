@@ -17,7 +17,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(217,237,246,0.75),_transparent_32%),linear-gradient(180deg,_#fcfcf7_0%,_#f6f0df_100%)] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 py-4 lg:flex-row lg:px-8">
-        <aside className="w-full rounded-[28px] border border-camp-forest/10 bg-white/80 p-5 shadow-panel backdrop-blur lg:sticky lg:top-4 lg:h-[calc(100vh-2rem)] lg:w-80">
+        <aside className="w-full rounded-[28px] border border-camp-forest/10 bg-white/80 p-5 shadow-panel backdrop-blur lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-2rem)] lg:w-80 lg:flex-col lg:overflow-hidden">
           <div className="rounded-[24px] bg-camp-forest p-5 text-white">
             <p className="text-xs uppercase tracking-[0.3em] text-camp-sky">Camp Ops</p>
             <h1 className="mt-3 font-serif text-3xl">Infrastructure Scaffold</h1>
@@ -34,29 +34,31 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
             </p>
           </div>
 
-          <nav className="mt-5 space-y-2">
-            {navItems
-              .filter((item) => !item.roles || item.roles.includes(session.role))
-              .map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'block rounded-2xl border border-transparent px-4 py-3 transition hover:border-camp-forest/20 hover:bg-white',
-                    title === item.label && 'border-camp-forest/15 bg-white'
-                  )}
-                >
-                  <span className="block font-semibold text-camp-forest">{item.label}</span>
-                  <span className="block text-sm text-slate-600">{item.description}</span>
-                </Link>
-              ))}
-          </nav>
+          <div className="mt-5 flex min-h-0 flex-1 flex-col">
+            <nav className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
+              {navItems
+                .filter((item) => !item.roles || item.roles.includes(session.role))
+                .map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={cn(
+                      'block rounded-2xl border border-transparent px-4 py-3 transition hover:border-camp-forest/20 hover:bg-white',
+                      title === item.label && 'border-camp-forest/15 bg-white'
+                    )}
+                  >
+                    <span className="block font-semibold text-camp-forest">{item.label}</span>
+                    <span className="block text-sm text-slate-600">{item.description}</span>
+                  </Link>
+                ))}
+            </nav>
 
-          {session.isAuthenticated && (
-            <div className="mt-4">
-              <SignOutButton />
-            </div>
-          )}
+            {session.isAuthenticated && (
+              <div className="mt-4 border-t border-camp-forest/10 pt-4">
+                <SignOutButton />
+              </div>
+            )}
+          </div>
         </aside>
 
         <main className="flex-1">
