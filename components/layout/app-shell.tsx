@@ -1,9 +1,7 @@
-import Link from 'next/link';
-
 import { SignOutButton } from '@/components/auth/sign-out-button';
+import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { navItems } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
-import { cn } from '@/lib/utils';
 
 type AppShellProps = {
   title: string;
@@ -35,23 +33,9 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
           </div>
 
           <div className="mt-5 flex min-h-0 flex-1 flex-col">
-            <nav className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1">
-              {navItems
-                .filter((item) => !item.roles || item.roles.includes(session.role))
-                .map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                      'block rounded-2xl border border-transparent px-4 py-3 transition hover:border-camp-forest/20 hover:bg-white',
-                      title === item.label && 'border-camp-forest/15 bg-white'
-                    )}
-                  >
-                    <span className="block font-semibold text-camp-forest">{item.label}</span>
-                    <span className="block text-sm text-slate-600">{item.description}</span>
-                  </Link>
-                ))}
-            </nav>
+            <SidebarNav
+              items={navItems.filter((item) => !item.roles || item.roles.includes(session.role))}
+            />
 
             {session.isAuthenticated && (
               <div className="mt-4 border-t border-camp-forest/10 pt-4">
