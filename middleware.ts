@@ -2,12 +2,14 @@ import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
 
 import { createServerClient } from '@supabase/ssr';
+import { adminPrivilegedRoles, staffPrivilegedRoles } from '@/lib/app-config';
 
 const protectedPrefixes = [
   '/dashboard',
   '/events',
   '/tasks',
   '/check-in',
+  '/inventory',
   '/profile',
   '/dev-tools',
   '/admin',
@@ -71,10 +73,19 @@ export async function middleware(request: NextRequest) {
     return NextResponse.redirect(signInUrl);
   }
 
-  const isStaffOrHigher = ['super_admin', 'admin', 'staff'].includes(role);
-  const isAdminOrHigher = ['super_admin', 'admin'].includes(role);
+  const isStaffOrHigher = staffPrivilegedRoles.includes(
+    role as (typeof staffPrivilegedRoles)[number]
+  );
+  const isAdminOrHigher = adminPrivilegedRoles.includes(
+    role as (typeof adminPrivilegedRoles)[number]
+  );
 
-  if ((pathname.startsWith('/admin') || pathname.startsWith('/check-in')) && !isStaffOrHigher) {
+  if (
+    (pathname.startsWith('/admin') ||
+      pathname.startsWith('/check-in') ||
+      pathname.startsWith('/inventory')) &&
+    !isStaffOrHigher
+  ) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
@@ -91,6 +102,7 @@ export const config = {
     '/events/:path*',
     '/tasks/:path*',
     '/check-in/:path*',
+    '/inventory/:path*',
     '/profile/:path*',
     '/dev-tools/:path*',
     '/admin/:path*',

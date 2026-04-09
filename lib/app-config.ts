@@ -1,5 +1,7 @@
 export type AppRole = 'super_admin' | 'admin' | 'staff' | 'participant';
 export const appRoles: AppRole[] = ['super_admin', 'admin', 'staff', 'participant'];
+export const staffPrivilegedRoles: AppRole[] = ['super_admin', 'admin', 'staff'];
+export const adminPrivilegedRoles: AppRole[] = ['super_admin', 'admin'];
 
 export type NavItem = {
   href: string;
@@ -13,13 +15,19 @@ export const navItems: NavItem[] = [
   { href: '/events', label: 'Events', description: 'Upcoming camps and signups' },
   { href: '/tasks', label: 'Tasks', description: 'Assignments and follow-ups' },
   { href: '/check-in', label: 'Check-in', description: 'Front desk flow' },
+  {
+    href: '/inventory',
+    label: 'Inventory',
+    description: 'Stock, locations, and movement',
+    roles: staffPrivilegedRoles,
+  },
   { href: '/profile', label: 'Profile', description: 'Account details' },
   { href: '/dev-tools', label: 'Dev Tools', description: 'Temporary internal tool menu' },
   {
     href: '/admin',
     label: 'Admin',
     description: 'Staff-only management',
-    roles: ['super_admin', 'admin', 'staff'],
+    roles: staffPrivilegedRoles,
   },
 ];
 

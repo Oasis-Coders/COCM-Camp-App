@@ -1,6 +1,6 @@
 import { cookies } from 'next/headers';
 
-import type { AppRole } from '@/lib/app-config';
+import { staffPrivilegedRoles, type AppRole } from '@/lib/app-config';
 import { normalizeRole, resolveDisplayName, resolveUserRole } from '@/lib/auth/auth-utils';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { hasSupabaseEnv } from '@/lib/supabase/env';
@@ -58,5 +58,5 @@ export async function getSession(): Promise<DemoSession> {
 
 export async function hasElevatedAccess() {
   const session = await getSession();
-  return session.role === 'super_admin' || session.role === 'admin' || session.role === 'staff';
+  return staffPrivilegedRoles.includes(session.role);
 }
