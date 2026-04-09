@@ -10,6 +10,7 @@ describe('app scaffold config', () => {
         '/events',
         '/tasks',
         '/check-in',
+        '/inventory',
         '/profile',
         '/dev-tools',
         '/admin',
