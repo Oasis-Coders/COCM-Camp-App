@@ -28,7 +28,7 @@ function SubmitButton({ label, tone }: { label: string; tone: 'primary' | 'secon
     <button
       type="submit"
       disabled={pending}
-      className={`inline-flex min-w-[112px] items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
+      className={`inline-flex min-w-[92px] items-center justify-center rounded-full px-3 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
         tone === 'primary'
           ? 'bg-camp-forest text-white hover:bg-camp-forest/90'
           : 'bg-camp-sand/65 text-camp-forest hover:bg-camp-sand'
@@ -71,23 +71,21 @@ export function StockMovementForm({
     <form
       ref={formRef}
       action={formAction}
-      className={`grid gap-3 rounded-[20px] border border-camp-forest/10 p-4 ${
-        tone === 'primary' ? 'bg-camp-sky/15' : 'bg-camp-sand/25'
-      }`}
+      className="grid gap-2"
     >
       <input type="hidden" name="itemId" value={itemId} />
       <input type="hidden" name="type" value={type} />
 
       {statusMessage ? (
         <section
-          className={`rounded-[18px] border px-3 py-2 text-xs ${toneClasses(statusMessage.tone)}`}
+          className={`rounded-[14px] border px-2.5 py-1.5 text-[11px] ${toneClasses(statusMessage.tone)}`}
         >
           {statusMessage.text}
         </section>
       ) : null}
 
-      <div className="grid gap-3 md:grid-cols-[auto_140px_112px] md:items-center">
-        <p className="text-base font-semibold text-camp-forest">{label}</p>
+      <div className="grid gap-2 md:grid-cols-[auto_108px_92px] md:items-center">
+        <p className="text-sm font-semibold text-camp-forest">{label}</p>
 
         <label className="grid gap-1 text-sm text-slate-700">
           <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-camp-moss">
@@ -99,7 +97,7 @@ export function StockMovementForm({
             min="1"
             step="1"
             required
-            className="rounded-full border border-camp-forest/10 bg-white px-4 py-2.5 text-sm text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/60"
+            className="rounded-full border border-camp-forest/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/60"
           />
         </label>
 

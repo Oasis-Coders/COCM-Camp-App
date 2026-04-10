@@ -222,20 +222,20 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                         key={item.id}
                         className="rounded-[24px] border border-camp-forest/10 bg-white p-5"
                       >
-                        <div className="flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
-                          <div className="flex flex-wrap items-center gap-3 2xl:min-w-[180px]">
+                        <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-center 2xl:justify-between">
+                          <div className="flex flex-wrap items-center gap-3 2xl:min-w-[140px]">
                             <p className="text-lg font-semibold text-camp-forest">{item.name}</p>
                             <span className="rounded-full bg-camp-sky/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-camp-forest">
                               {item.sku}
                             </span>
                           </div>
 
-                          <div className="flex flex-wrap items-center gap-3 2xl:flex-nowrap">
-                            <div className="rounded-[20px] bg-camp-sand/25 px-4 py-3 text-sm text-slate-700">
+                          <div className="flex flex-wrap items-center gap-2.5 2xl:flex-nowrap">
+                            <div className="rounded-[18px] bg-camp-sand/25 px-3 py-2.5 text-sm text-slate-700">
                               <p className="text-xs uppercase tracking-[0.18em] text-camp-moss">
                                 Current stock
                               </p>
-                              <p className="mt-2 text-2xl font-semibold text-camp-forest">
+                              <p className="mt-1.5 text-xl font-semibold text-camp-forest">
                                 {item.quantity}
                               </p>
                             </div>
@@ -245,7 +245,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                               sku={item.sku}
                             />
 
-                            <div className="rounded-[20px] border border-camp-forest/10 bg-camp-sky/15 p-3">
+                            <div className="rounded-[18px] border border-camp-forest/10 bg-camp-sky/15 p-2.5">
                               <StockMovementForm
                                 itemId={item.id}
                                 type="in"
@@ -254,7 +254,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                               />
                             </div>
 
-                            <div className="rounded-[20px] border border-camp-forest/10 bg-camp-sand/25 p-3">
+                            <div className="rounded-[18px] border border-camp-forest/10 bg-camp-sand/25 p-2.5">
                               <StockMovementForm
                                 itemId={item.id}
                                 type="out"

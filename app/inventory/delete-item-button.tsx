@@ -20,7 +20,7 @@ function DeleteSubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-[#fff7f3] px-4 py-2 text-sm font-semibold text-[#8b4b3b] transition hover:border-rose-300 hover:bg-[#ffefe7] disabled:cursor-wait disabled:opacity-70"
+      className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-[#fff7f3] px-3 py-2 text-sm font-semibold text-[#8b4b3b] transition hover:border-rose-300 hover:bg-[#ffefe7] disabled:cursor-wait disabled:opacity-70"
     >
       {pending ? 'Deleting...' : 'Delete'}
     </button>
@@ -51,10 +51,10 @@ export function DeleteItemButton({
   }, [router, state.status, state.submittedAt]);
 
   return (
-    <div className="grid justify-items-end gap-2">
+    <div className="grid justify-items-end gap-1.5">
       {statusMessage ? (
         <div
-          className={`max-w-[220px] rounded-[18px] border px-3 py-2 text-right text-xs ${
+          className={`max-w-[200px] rounded-[14px] border px-2.5 py-1.5 text-right text-[11px] ${
             statusMessage.tone === 'success'
               ? 'border-emerald-200 bg-emerald-50/90 text-emerald-900'
               : 'border-rose-200 bg-rose-50/90 text-rose-900'
