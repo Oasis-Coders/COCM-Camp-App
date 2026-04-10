@@ -110,6 +110,11 @@ describe('inventory utils', () => {
       text: 'Not enough stock for this outbound movement.',
     });
 
+    expect(getInventoryStatusMessage('history-cleared')).toEqual({
+      tone: 'success',
+      text: 'Inventory history cleared successfully.',
+    });
+
     expect(getInventoryStatusMessage(undefined)).toBeNull();
   });
 });

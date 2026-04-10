@@ -15,7 +15,9 @@ export type InventoryStockRecord = {
 
 export type InventoryMovementRecord = {
   id: string;
-  item_id: string;
+  item_id: string | null;
+  item_name: string | null;
+  item_sku: string | null;
   type: string;
   quantity: number | string | null;
   operator_name: string;
@@ -162,6 +164,11 @@ export function getInventoryStatusMessage(
       return {
         tone: 'success',
         text: 'Item deleted successfully.',
+      };
+    case 'history-cleared':
+      return {
+        tone: 'success',
+        text: 'Inventory history cleared successfully.',
       };
     case 'stock-in':
       return {
