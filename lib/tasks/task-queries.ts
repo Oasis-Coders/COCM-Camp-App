@@ -76,6 +76,41 @@ export async function getCurrentUserProfileId(): Promise<string | null> {
 }
 
 /**
+ * Fetch all tasks with minimal fields needed for reporting.
+ * Uses a lightweight select — no joins, no profile data.
+ */
+export async function fetchTasksForReporting(): Promise<
+  {
+    id: string;
+    status: string;
+    priority: string;
+    assigned_to: string | null;
+    due_at: string | null;
+    completed_at: string | null;
+    created_at: string | null;
+  }[]
+> {
+  const supabase = await createSupabaseServerClient();
+
+  const { data } = await (supabase
+    ?.from('tasks')
+    .select('id, status, priority, assigned_to, due_at, completed_at, created_at')
+    .order('created_at', { ascending: false }) ?? { data: [] });
+
+  return (
+    (data as {
+      id: string;
+      status: string;
+      priority: string;
+      assigned_to: string | null;
+      due_at: string | null;
+      completed_at: string | null;
+      created_at: string | null;
+    }[]) || []
+  );
+}
+
+/**
  * Fetch events list (for create/edit forms).
  */
 export async function fetchEventOptions(): Promise<{ id: string; title: string }[]> {
