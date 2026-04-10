@@ -12,7 +12,7 @@ import {
 import { logServerError } from '@/lib/observability/logger';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 
-type InventoryStatus =
+export type InventoryStatus =
   | 'item-created'
   | 'stock-in'
   | 'stock-out'
@@ -21,6 +21,11 @@ type InventoryStatus =
   | 'unauthorized'
   | 'supabase-unavailable'
   | 'operation-failed';
+
+export type InventoryActionState = {
+  status: InventoryStatus | null;
+  submittedAt: number | null;
+};
 
 async function getInventoryActionContext() {
   const session = await getSession();
@@ -88,9 +93,10 @@ function mapInventoryError(error: unknown): InventoryStatus {
   return 'operation-failed';
 }
 
-export async function createInventoryItem(formData: FormData) {
-  let successStatus: InventoryStatus = 'item-created';
-
+export async function createInventoryItem(
+  _previousState: InventoryActionState,
+  formData: FormData
+): Promise<InventoryActionState> {
   try {
     const input = normalizeInventoryItemInput({
       name: String(formData.get('name') ?? ''),
@@ -131,6 +137,14 @@ export async function createInventoryItem(formData: FormData) {
     if (movementError) {
       throw movementError;
     }
+
+    revalidatePath('/inventory');
+    revalidatePath('/inventory/history');
+
+    return {
+      status: 'item-created',
+      submittedAt: Date.now(),
+    };
   } catch (error) {
     logServerError({
       scope: 'inventory.create_item',
@@ -141,10 +155,12 @@ export async function createInventoryItem(formData: FormData) {
         sku: String(formData.get('sku') ?? ''),
       },
     });
-    redirectToInventory(mapInventoryError(error));
-  }
 
-  redirectToInventory(successStatus);
+    return {
+      status: mapInventoryError(error),
+      submittedAt: Date.now(),
+    };
+  }
 }
 
 export async function applyInventoryMovement(formData: FormData) {

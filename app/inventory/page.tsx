@@ -13,7 +13,8 @@ import {
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-import { applyInventoryMovement, createInventoryItem } from './actions';
+import { applyInventoryMovement } from './actions';
+import { CreateItemForm } from './create-item-form';
 
 type InventoryPageProps = {
   searchParams: Promise<{
@@ -205,11 +206,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                 eyebrow="Create"
                 description="This MVP only stores item name and SKU. New items start with stock at zero."
               >
-                <form action={createInventoryItem} className="grid gap-4">
-                  <InventoryTextField label="Item name" name="name" required />
-                  <InventoryTextField label="SKU" name="sku" required placeholder="ITEM-001" />
-                  <InventorySubmitButton>Add item</InventorySubmitButton>
-                </form>
+                <CreateItemForm />
               </InventorySectionCard>
 
               <InventorySectionCard
