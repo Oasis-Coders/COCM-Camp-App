@@ -12,11 +12,7 @@
  */
 
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import {
-  type TaskNotificationEvent,
-  resolveRecipients,
-  eventSummary,
-} from './task-events';
+import { type TaskNotificationEvent, resolveRecipients, eventSummary } from './task-events';
 
 export type EmitContext = {
   /** Profile ID of the task creator (for recipient resolution) */
@@ -40,6 +36,7 @@ export async function emitTaskEvent(
     const summary = eventSummary(event);
 
     // Console log for dev observability
+    // eslint-disable-next-line no-console
     console.info(
       `[task-notification] ${event.name} | ${summary} | recipients: [${recipients.join(', ')}]`
     );
@@ -60,11 +57,13 @@ export async function emitTaskEvent(
 
       if (error) {
         // Log but don't throw — notifications must not break task operations
+        // eslint-disable-next-line no-console
         console.warn('[task-notification] Failed to persist notification log:', error.message);
       }
     }
   } catch (err) {
     // Catch-all: notification failures must never break task actions
+    // eslint-disable-next-line no-console
     console.warn(
       '[task-notification] Unexpected error emitting event:',
       err instanceof Error ? err.message : err
