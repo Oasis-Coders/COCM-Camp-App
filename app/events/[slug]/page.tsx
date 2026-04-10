@@ -1,3 +1,16 @@
+/**
+ * app/events/[slug]/page.tsx
+ *
+ * Event detail page. Shows summary, logistics, and registration status for a single event.
+ *
+ * Data fetched on each request (dynamic):
+ *   - Event record (by slug)
+ *   - Current user's registration status for this event
+ *   - Live registration count (used to display "X / capacity" to the user)
+ *
+ * The RegistrationButton links authenticated users to /events/[slug]/register.
+ * If already registered or waitlisted it renders a Cancel button instead.
+ */
 import { notFound } from 'next/navigation';
 
 import { AppShell } from '@/components/layout/app-shell';
@@ -115,7 +128,11 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
               </p>
             )}
             <div className="mt-4">
-              <RegistrationButton eventId={event.id} currentStatus={registrationStatus} />
+              <RegistrationButton
+                eventId={event.id}
+                eventSlug={event.slug}
+                currentStatus={registrationStatus}
+              />
             </div>
           </article>
         </div>
