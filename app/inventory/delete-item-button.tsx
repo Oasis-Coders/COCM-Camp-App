@@ -20,9 +20,28 @@ function DeleteSubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex items-center justify-center rounded-full border border-rose-200 bg-[#fff7f3] px-3 py-2 text-sm font-semibold text-[#8b4b3b] transition hover:border-rose-300 hover:bg-[#ffefe7] disabled:cursor-wait disabled:opacity-70"
+      aria-label={pending ? 'Deleting item' : 'Delete item'}
+      title={pending ? 'Deleting item' : 'Delete item'}
+      className="inline-flex size-10 items-center justify-center rounded-full border border-[#e8b8aa] bg-[#fff7f3] text-[#8b4b3b] shadow-sm transition hover:-translate-y-0.5 hover:border-[#d69380] hover:bg-[#ffefe7] hover:text-[#743728] disabled:cursor-wait disabled:opacity-70"
     >
-      {pending ? 'Deleting...' : 'Delete'}
+      <svg
+        aria-hidden="true"
+        className="size-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="1.8"
+        viewBox="0 0 24 24"
+      >
+        <path d="M9 4h6" />
+        <path d="M10 4l.5-1h3L14 4" />
+        <path d="M5 7h14" />
+        <path d="M8 7l.8 13h6.4L16 7" />
+        <path d="M10.5 10.5v6" />
+        <path d="M13.5 10.5v6" />
+      </svg>
+      <span className="sr-only">{pending ? 'Deleting item' : 'Delete item'}</span>
     </button>
   );
 }

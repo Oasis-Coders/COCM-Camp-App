@@ -222,17 +222,17 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                         key={item.id}
                         className="rounded-[24px] border border-camp-forest/10 bg-white p-4"
                       >
-                        <div className="grid gap-3 xl:grid-cols-[minmax(120px,1fr)_120px_auto_minmax(210px,230px)_minmax(210px,230px)] xl:items-center">
-                          <div className="flex min-w-0 flex-wrap items-center gap-2.5">
+                        <div className="grid gap-3 xl:grid-cols-[minmax(120px,1fr)_112px_40px_minmax(205px,1fr)_minmax(215px,1fr)] xl:items-center">
+                          <div className="min-w-0">
                             <p className="truncate text-lg font-semibold text-camp-forest">
                               {item.name}
                             </p>
-                            <span className="rounded-full bg-camp-sky/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-camp-forest">
+                            <span className="mt-1 inline-flex rounded-full bg-camp-sky/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-camp-forest">
                               {item.sku}
                             </span>
                           </div>
 
-                          <div className="rounded-[18px] bg-camp-sand/25 px-3 py-2 text-sm text-slate-700">
+                          <div className="rounded-[18px] bg-camp-sand/25 px-3 py-2 text-sm text-slate-700 shadow-[inset_0_0_0_1px_rgba(12,58,42,0.03)]">
                             <p className="text-[11px] uppercase tracking-[0.16em] text-camp-moss">
                               Stock
                             </p>
