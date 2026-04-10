@@ -68,11 +68,7 @@ export function StockMovementForm({
   }, [isSuccess, router, state.submittedAt]);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      className="grid gap-2"
-    >
+    <form ref={formRef} action={formAction} className="grid gap-2">
       <input type="hidden" name="itemId" value={itemId} />
       <input type="hidden" name="type" value={type} />
 
