@@ -27,7 +27,15 @@ function DeleteSubmitButton() {
   );
 }
 
-export function DeleteItemButton({ itemId, itemName }: { itemId: string; itemName: string }) {
+export function DeleteItemButton({
+  itemId,
+  itemName,
+  sku,
+}: {
+  itemId: string;
+  itemName: string;
+  sku: string;
+}) {
   const router = useRouter();
   const [state, formAction] = useActionState(deleteInventoryItem, initialInventoryActionState);
   const statusMessage = getInventoryStatusMessage(state.status ?? undefined);
@@ -59,7 +67,11 @@ export function DeleteItemButton({ itemId, itemName }: { itemId: string; itemNam
       <form
         action={formAction}
         onSubmit={(event) => {
-          if (!window.confirm(`Delete ${itemName}? This will remove its stock and history.`)) {
+          if (
+            !window.confirm(
+              `Delete item "${itemName}" (${sku})? This will remove its stock and history.`
+            )
+          ) {
             event.preventDefault();
           }
         }}
