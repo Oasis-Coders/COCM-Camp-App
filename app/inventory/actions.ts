@@ -7,20 +7,16 @@ import { staffPrivilegedRoles } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
 import {
   normalizeInventoryItemInput,
-  normalizeInventoryLocationInput,
-  normalizeInventoryTransactionInput,
+  normalizeInventoryMovementInput,
 } from '@/lib/inventory/inventory-utils';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 type InventoryStatus =
   | 'item-created'
-  | 'location-created'
-  | 'received'
-  | 'transferred'
-  | 'checked-out'
-  | 'returned'
-  | 'adjusted'
+  | 'stock-in'
+  | 'stock-out'
   | 'validation-error'
+  | 'insufficient-stock'
   | 'unauthorized'
   | 'supabase-unavailable'
   | 'operation-failed';
@@ -46,31 +42,32 @@ async function getInventoryActionContext() {
     throw new Error('Inventory access denied');
   }
 
-  const { data: profile, error: profileError } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('auth_user_id', user.id)
-    .single<{ id: string }>();
-
-  if (profileError || !profile) {
-    throw new Error('Inventory access denied');
-  }
-
   return {
     supabase,
-    profileId: profile.id,
+    operatorName: session.displayName || user.email || 'Camp user',
   };
 }
 
 function redirectToInventory(status: InventoryStatus) {
   revalidatePath('/inventory');
+  revalidatePath('/inventory/history');
   redirect(`/inventory?inventory=${status}`);
 }
 
 function mapInventoryError(error: unknown): InventoryStatus {
   const message = error instanceof Error ? error.message.toLowerCase() : '';
 
-  if (message.includes('required') || message.includes('invalid') || message.includes('choose')) {
+  if (message.includes('not enough stock')) {
+    return 'insufficient-stock';
+  }
+
+  if (
+    message.includes('required') ||
+    message.includes('invalid') ||
+    message.includes('quantity') ||
+    message.includes('unique') ||
+    message.includes('duplicate')
+  ) {
     return 'validation-error';
   }
 
@@ -88,28 +85,15 @@ function mapInventoryError(error: unknown): InventoryStatus {
 export async function createInventoryItem(formData: FormData) {
   try {
     const input = normalizeInventoryItemInput({
-      sku: String(formData.get('sku') ?? ''),
       name: String(formData.get('name') ?? ''),
-      description: String(formData.get('description') ?? ''),
-      category: String(formData.get('category') ?? ''),
-      unit: String(formData.get('unit') ?? ''),
-      minimumStock: String(formData.get('minimumStock') ?? ''),
-      defaultLocationId: String(formData.get('defaultLocationId') ?? ''),
-      isCheckoutable: String(formData.get('isCheckoutable') ?? ''),
+      sku: String(formData.get('sku') ?? ''),
     });
 
-    const { supabase, profileId } = await getInventoryActionContext();
+    const { supabase } = await getInventoryActionContext();
 
-    const { error } = await supabase.from('inventory_items').insert({
-      sku: input.sku,
-      name: input.name,
-      description: input.description,
-      category: input.category,
-      unit: input.unit,
-      minimum_stock: input.minimumStock,
-      default_location_id: input.defaultLocationId,
-      is_checkoutable: input.isCheckoutable,
-      created_by: profileId,
+    const { error } = await supabase.rpc('inventory_add_item', {
+      p_name: input.name,
+      p_sku: input.sku,
     });
 
     if (error) {
@@ -123,81 +107,30 @@ export async function createInventoryItem(formData: FormData) {
   }
 }
 
-export async function createInventoryLocation(formData: FormData) {
+export async function applyInventoryMovement(formData: FormData) {
   try {
-    const input = normalizeInventoryLocationInput({
-      name: String(formData.get('name') ?? ''),
-      code: String(formData.get('code') ?? ''),
-      locationType: String(formData.get('locationType') ?? ''),
-    });
-
-    const { supabase, profileId } = await getInventoryActionContext();
-
-    const { error } = await supabase.from('inventory_locations').insert({
-      name: input.name,
-      code: input.code,
-      location_type: input.locationType,
-      created_by: profileId,
-    });
-
-    if (error) {
-      throw error;
-    }
-
-    redirectToInventory('location-created');
-  } catch (error) {
-    console.error('Error creating inventory location:', error);
-    redirectToInventory(mapInventoryError(error));
-  }
-}
-
-export async function submitInventoryTransaction(formData: FormData) {
-  try {
-    const input = normalizeInventoryTransactionInput({
-      transactionType: String(formData.get('transactionType') ?? ''),
+    const input = normalizeInventoryMovementInput({
       itemId: String(formData.get('itemId') ?? ''),
-      assignmentId: String(formData.get('assignmentId') ?? ''),
-      sourceLocationId: String(formData.get('sourceLocationId') ?? ''),
-      destinationLocationId: String(formData.get('destinationLocationId') ?? ''),
+      type: String(formData.get('type') ?? ''),
       quantity: String(formData.get('quantity') ?? ''),
-      reasonCode: String(formData.get('reasonCode') ?? ''),
-      notes: String(formData.get('notes') ?? ''),
-      assignedToProfileId: String(formData.get('assignedToProfileId') ?? ''),
-      assignedToEventId: String(formData.get('assignedToEventId') ?? ''),
-      dueBackAt: String(formData.get('dueBackAt') ?? ''),
     });
 
-    const { supabase } = await getInventoryActionContext();
+    const { supabase, operatorName } = await getInventoryActionContext();
 
-    const { error } = await supabase.rpc('apply_inventory_transaction', {
-      p_transaction_type: input.transactionType,
+    const { error } = await supabase.rpc('inventory_apply_movement', {
       p_item_id: input.itemId,
+      p_type: input.type,
       p_quantity: input.quantity,
-      p_source_location_id: input.sourceLocationId,
-      p_destination_location_id: input.destinationLocationId,
-      p_reason_code: input.reasonCode,
-      p_notes: input.notes,
-      p_assigned_to_profile_id: input.assignedToProfileId,
-      p_assigned_to_event_id: input.assignedToEventId,
-      p_assignment_id: input.assignmentId,
-      p_due_back_at: input.dueBackAt,
+      p_operator_name: operatorName,
     });
 
     if (error) {
       throw error;
     }
 
-    const successStatus: Record<typeof input.transactionType, InventoryStatus> = {
-      receive: 'received',
-      transfer: 'transferred',
-      checkout: 'checked-out',
-      return: 'returned',
-      adjustment: 'adjusted',
-    };
-
-    redirectToInventory(successStatus[input.transactionType]);
+    redirectToInventory(input.type === 'in' ? 'stock-in' : 'stock-out');
   } catch (error) {
-    console.error('Error applying inventory transaction:', error);
+    console.error('Error applying inventory movement:', error);
     redirectToInventory(mapInventoryError(error));
   }
 }

@@ -18,7 +18,7 @@ export const navItems: NavItem[] = [
   {
     href: '/inventory',
     label: 'Inventory',
-    description: 'Stock, locations, and movement',
+    description: 'Basic stock tracking',
     roles: staffPrivilegedRoles,
   },
   { href: '/profile', label: 'Profile', description: 'Account details' },
