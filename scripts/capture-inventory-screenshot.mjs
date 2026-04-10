@@ -27,7 +27,8 @@ async function signInWithPassword(page) {
   const signInUrl = new URL('/sign-in', baseUrl);
   signInUrl.searchParams.set('redirectTo', '/inventory');
 
-  await page.goto(signInUrl.toString(), { waitUntil: 'networkidle' });
+  await page.goto(signInUrl.toString(), { waitUntil: 'domcontentloaded' });
+  await page.locator('input[name="email"]').waitFor();
   await page.fill('input[name="email"]', email);
   await page.fill('input[name="password"]', password);
   await Promise.all([
@@ -80,7 +81,7 @@ async function main() {
 
     if (!usedPasswordSignIn) {
       await addDemoCookies(context);
-      await page.goto(new URL('/inventory', baseUrl).toString(), { waitUntil: 'networkidle' });
+      await page.goto(new URL('/inventory', baseUrl).toString(), { waitUntil: 'domcontentloaded' });
     }
 
     const currentPath = new URL(page.url()).pathname;

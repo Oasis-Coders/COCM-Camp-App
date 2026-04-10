@@ -28,7 +28,7 @@ function SubmitButton({ label, tone }: { label: string; tone: 'primary' | 'secon
     <button
       type="submit"
       disabled={pending}
-      className={`inline-flex min-w-[92px] items-center justify-center rounded-full px-3 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
+      className={`inline-flex min-w-[70px] items-center justify-center rounded-full px-3 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
         tone === 'primary'
           ? 'bg-camp-forest text-white hover:bg-camp-forest/90'
           : 'bg-camp-sand/65 text-camp-forest hover:bg-camp-sand'
@@ -55,6 +55,7 @@ export function StockMovementForm({
   const [state, formAction] = useActionState(applyInventoryMovement, initialInventoryActionState);
   const statusMessage = getInventoryStatusMessage(state.status ?? undefined);
   const isSuccess = state.status === 'stock-in' || state.status === 'stock-out';
+  const submitLabel = type === 'in' ? 'Add' : 'Remove';
 
   useEffect(() => {
     if (!state.submittedAt || !isSuccess) {
@@ -80,24 +81,24 @@ export function StockMovementForm({
         </section>
       ) : null}
 
-      <div className="grid gap-2 md:grid-cols-[auto_108px_92px] md:items-center">
-        <p className="text-sm font-semibold text-camp-forest">{label}</p>
+      <div className="grid grid-cols-[auto_minmax(58px,1fr)_auto] items-center gap-2">
+        <p className="shrink-0 text-sm font-semibold text-camp-forest">{label}</p>
 
-        <label className="grid gap-1 text-sm text-slate-700">
-          <span className="text-[11px] font-medium uppercase tracking-[0.14em] text-camp-moss">
-            Qty
-          </span>
+        <label className="min-w-0 flex-1 text-sm text-slate-700">
+          <span className="sr-only">{label} quantity</span>
           <input
             type="number"
             name="quantity"
+            aria-label={`${label} quantity`}
             min="1"
             step="1"
             required
-            className="rounded-full border border-camp-forest/10 bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/60"
+            placeholder="Qty"
+            className="h-10 w-full rounded-full border border-camp-forest/10 bg-white px-3 text-sm text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/60"
           />
         </label>
 
-        <SubmitButton label={label} tone={tone} />
+        <SubmitButton label={submitLabel} tone={tone} />
       </div>
     </form>
   );
