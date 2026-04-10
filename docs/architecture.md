@@ -20,3 +20,10 @@
 - RLS is enabled on all application tables
 - Starter SQL functions `has_role` and `has_any_role` support policy composition
 - App-level route restrictions complement, but do not replace, database authorization
+
+## Task management
+
+- Tasks follow a defined lifecycle: **Draft → Open → In Progress → (Blocked) → Done / Cancelled**
+- Status transitions are validated in the application layer (`lib/tasks/task-model.ts`) and enforced by database check constraints
+- Completion tracking (`completed_at`, `completed_by`) is handled by a database trigger
+- See [docs/task-workflow.md](task-workflow.md) for the full status model, assignment rules, and team workflow reference
