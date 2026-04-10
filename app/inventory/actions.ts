@@ -76,6 +76,8 @@ function mapInventoryError(error: unknown): InventoryStatus {
 }
 
 export async function createInventoryItem(formData: FormData) {
+  let successStatus: InventoryStatus = 'item-created';
+
   try {
     const input = normalizeInventoryItemInput({
       name: String(formData.get('name') ?? ''),
@@ -105,8 +107,6 @@ export async function createInventoryItem(formData: FormData) {
     if (stockError) {
       throw stockError;
     }
-
-    redirectToInventory('item-created');
   } catch (error) {
     logServerError({
       scope: 'inventory.create_item',
@@ -119,9 +119,13 @@ export async function createInventoryItem(formData: FormData) {
     });
     redirectToInventory(mapInventoryError(error));
   }
+
+  redirectToInventory(successStatus);
 }
 
 export async function applyInventoryMovement(formData: FormData) {
+  let successStatus: InventoryStatus = 'stock-in';
+
   try {
     const input = normalizeInventoryMovementInput({
       itemId: String(formData.get('itemId') ?? ''),
@@ -167,8 +171,7 @@ export async function applyInventoryMovement(formData: FormData) {
     if (movementError) {
       throw movementError;
     }
-
-    redirectToInventory(input.type === 'in' ? 'stock-in' : 'stock-out');
+    successStatus = input.type === 'in' ? 'stock-in' : 'stock-out';
   } catch (error) {
     logServerError({
       scope: 'inventory.apply_movement',
@@ -182,4 +185,6 @@ export async function applyInventoryMovement(formData: FormData) {
     });
     redirectToInventory(mapInventoryError(error));
   }
+
+  redirectToInventory(successStatus);
 }
