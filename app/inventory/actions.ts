@@ -97,7 +97,7 @@ export async function createInventoryItem(formData: FormData) {
       sku: String(formData.get('sku') ?? ''),
     });
 
-    const { supabase } = await getInventoryActionContext();
+    const { supabase, operatorName } = await getInventoryActionContext();
 
     const { data: createdItem, error: itemError } = await supabase
       .from('inventory_items')
@@ -119,6 +119,17 @@ export async function createInventoryItem(formData: FormData) {
 
     if (stockError) {
       throw stockError;
+    }
+
+    const { error: movementError } = await supabase.from('inventory_movements').insert({
+      item_id: createdItem.id,
+      type: 'in',
+      quantity: 1,
+      operator_name: operatorName,
+    });
+
+    if (movementError) {
+      throw movementError;
     }
   } catch (error) {
     logServerError({
