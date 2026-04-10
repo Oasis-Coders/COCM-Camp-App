@@ -163,9 +163,10 @@ export async function createInventoryItem(
   }
 }
 
-export async function applyInventoryMovement(formData: FormData) {
-  let successStatus: InventoryStatus = 'stock-in';
-
+export async function applyInventoryMovement(
+  _previousState: InventoryActionState,
+  formData: FormData
+): Promise<InventoryActionState> {
   try {
     const input = normalizeInventoryMovementInput({
       itemId: String(formData.get('itemId') ?? ''),
@@ -211,7 +212,14 @@ export async function applyInventoryMovement(formData: FormData) {
     if (movementError) {
       throw movementError;
     }
-    successStatus = input.type === 'in' ? 'stock-in' : 'stock-out';
+
+    revalidatePath('/inventory');
+    revalidatePath('/inventory/history');
+
+    return {
+      status: input.type === 'in' ? 'stock-in' : 'stock-out',
+      submittedAt: Date.now(),
+    };
   } catch (error) {
     logServerError({
       scope: 'inventory.apply_movement',
@@ -223,8 +231,10 @@ export async function applyInventoryMovement(formData: FormData) {
         quantity: String(formData.get('quantity') ?? ''),
       },
     });
-    redirectToInventory(mapInventoryError(error));
-  }
 
-  redirectToInventory(successStatus);
+    return {
+      status: mapInventoryError(error),
+      submittedAt: Date.now(),
+    };
+  }
 }

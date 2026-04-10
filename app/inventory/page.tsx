@@ -13,8 +13,8 @@ import {
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-import { applyInventoryMovement } from './actions';
 import { CreateItemForm } from './create-item-form';
+import { StockMovementForm } from './stock-movement-form';
 
 type InventoryPageProps = {
   searchParams: Promise<{
@@ -85,60 +85,6 @@ function InventorySectionCard({
       {description ? <p className="mt-2 max-w-3xl text-sm text-slate-600">{description}</p> : null}
       <div className="mt-5">{children}</div>
     </article>
-  );
-}
-
-function InventoryTextField({
-  label,
-  name,
-  placeholder,
-  type = 'text',
-  required = false,
-  min,
-  step,
-}: {
-  label: string;
-  name: string;
-  placeholder?: string;
-  type?: string;
-  required?: boolean;
-  min?: string;
-  step?: string;
-}) {
-  return (
-    <label className="grid gap-2 text-sm text-slate-700">
-      <span className="font-medium text-camp-forest">{label}</span>
-      <input
-        type={type}
-        name={name}
-        required={required}
-        min={min}
-        step={step}
-        placeholder={placeholder}
-        className="rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/60"
-      />
-    </label>
-  );
-}
-
-function InventorySubmitButton({
-  children,
-  tone = 'primary',
-}: {
-  children: React.ReactNode;
-  tone?: 'primary' | 'secondary';
-}) {
-  return (
-    <button
-      type="submit"
-      className={`inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition ${
-        tone === 'primary'
-          ? 'bg-camp-forest text-white hover:bg-camp-forest/90'
-          : 'bg-camp-sand/65 text-camp-forest hover:bg-camp-sand'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
@@ -288,41 +234,21 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                         </div>
 
                         <div className="mt-4 grid gap-3 md:grid-cols-2">
-                          <form
-                            action={applyInventoryMovement}
-                            className="grid gap-3 rounded-[20px] border border-camp-forest/10 bg-camp-sky/15 p-4"
-                          >
-                            <input type="hidden" name="itemId" value={item.id} />
-                            <input type="hidden" name="type" value="in" />
-                            <InventoryTextField
-                              label="Quantity to add"
-                              name="quantity"
-                              type="number"
-                              min="1"
-                              step="1"
-                              required
-                            />
-                            <InventorySubmitButton>Stock in</InventorySubmitButton>
-                          </form>
+                          <StockMovementForm
+                            itemId={item.id}
+                            type="in"
+                            tone="primary"
+                            label="Stock in"
+                            quantityLabel="Quantity to add"
+                          />
 
-                          <form
-                            action={applyInventoryMovement}
-                            className="grid gap-3 rounded-[20px] border border-camp-forest/10 bg-camp-sand/25 p-4"
-                          >
-                            <input type="hidden" name="itemId" value={item.id} />
-                            <input type="hidden" name="type" value="out" />
-                            <InventoryTextField
-                              label="Quantity to remove"
-                              name="quantity"
-                              type="number"
-                              min="1"
-                              step="1"
-                              required
-                            />
-                            <InventorySubmitButton tone="secondary">
-                              Stock out
-                            </InventorySubmitButton>
-                          </form>
+                          <StockMovementForm
+                            itemId={item.id}
+                            type="out"
+                            tone="secondary"
+                            label="Stock out"
+                            quantityLabel="Quantity to remove"
+                          />
                         </div>
                       </article>
                     ))
