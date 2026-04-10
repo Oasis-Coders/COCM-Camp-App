@@ -9,6 +9,7 @@ import {
   normalizeInventoryItemInput,
   normalizeInventoryMovementInput,
 } from '@/lib/inventory/inventory-utils';
+import { logServerError } from '@/lib/observability/logger';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 
 type InventoryStatus =
@@ -107,7 +108,15 @@ export async function createInventoryItem(formData: FormData) {
 
     redirectToInventory('item-created');
   } catch (error) {
-    console.error('Error creating inventory item:', error);
+    logServerError({
+      scope: 'inventory.create_item',
+      message: 'Error creating inventory item',
+      error,
+      context: {
+        itemName: String(formData.get('name') ?? ''),
+        sku: String(formData.get('sku') ?? ''),
+      },
+    });
     redirectToInventory(mapInventoryError(error));
   }
 }
@@ -161,7 +170,16 @@ export async function applyInventoryMovement(formData: FormData) {
 
     redirectToInventory(input.type === 'in' ? 'stock-in' : 'stock-out');
   } catch (error) {
-    console.error('Error applying inventory movement:', error);
+    logServerError({
+      scope: 'inventory.apply_movement',
+      message: 'Error applying inventory movement',
+      error,
+      context: {
+        itemId: String(formData.get('itemId') ?? ''),
+        movementType: String(formData.get('type') ?? ''),
+        quantity: String(formData.get('quantity') ?? ''),
+      },
+    });
     redirectToInventory(mapInventoryError(error));
   }
 }
