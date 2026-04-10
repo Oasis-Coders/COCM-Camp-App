@@ -181,37 +181,36 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
               </InventorySectionCard>
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-2">
-              <InventorySectionCard
-                title="Products"
-                eyebrow="List"
-                description="The basic product table only shows item name and SKU."
-              >
-                <div className="grid gap-3">
-                  {products.length === 0 ? (
-                    <div className="rounded-[22px] border border-dashed border-camp-forest/20 bg-white/75 p-5 text-sm text-slate-600">
-                      No products yet.
-                    </div>
-                  ) : (
-                    products.map((item) => (
-                      <article
-                        key={item.id}
-                        className="rounded-[22px] border border-camp-forest/10 bg-white p-4"
-                      >
-                        <p className="font-semibold text-camp-forest">{item.name}</p>
-                        <p className="mt-1 text-sm text-slate-600">{item.sku}</p>
-                      </article>
-                    ))
-                  )}
-                </div>
-              </InventorySectionCard>
-
+            <section className="grid gap-6">
               <InventorySectionCard
                 title="Stock"
                 eyebrow="Balance"
-                description="Use the in and out buttons here. Outbound stock checks the current balance first."
+                description="Everything about each stock item lives here: product details, current balance, and quick in or out actions."
               >
-                <div className="grid gap-4">
+                <div className="grid gap-5">
+                  <div className="grid gap-3 md:grid-cols-3">
+                    <div className="rounded-[22px] border border-camp-forest/10 bg-camp-sand/25 p-4 text-sm text-slate-700">
+                      <p className="text-xs uppercase tracking-[0.2em] text-camp-moss">Items</p>
+                      <p className="mt-2 text-2xl font-semibold text-camp-forest">
+                        {products.length}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-camp-forest/10 bg-white p-4 text-sm text-slate-700">
+                      <p className="text-xs uppercase tracking-[0.2em] text-camp-moss">
+                        Stock lines
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold text-camp-forest">
+                        {stockItems.length}
+                      </p>
+                    </div>
+                    <div className="rounded-[22px] border border-camp-forest/10 bg-white p-4 text-sm text-slate-700">
+                      <p className="text-xs uppercase tracking-[0.2em] text-camp-moss">Workflow</p>
+                      <p className="mt-2 leading-6">
+                        Add or remove stock inline without leaving this panel.
+                      </p>
+                    </div>
+                  </div>
+
                   {stockItems.length === 0 ? (
                     <div className="rounded-[22px] border border-dashed border-camp-forest/20 bg-white/75 p-5 text-sm text-slate-600">
                       No stock records yet.
@@ -220,20 +219,31 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                     stockItems.map((item) => (
                       <article
                         key={item.id}
-                        className="rounded-[22px] border border-camp-forest/10 bg-white p-4"
+                        className="rounded-[24px] border border-camp-forest/10 bg-white p-5"
                       >
-                        <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
                           <div>
-                            <p className="font-semibold text-camp-forest">{item.name}</p>
-                            <p className="mt-1 text-sm text-slate-600">{item.sku}</p>
+                            <div className="flex flex-wrap items-center gap-3">
+                              <p className="text-lg font-semibold text-camp-forest">{item.name}</p>
+                              <span className="rounded-full bg-camp-sky/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-camp-forest">
+                                {item.sku}
+                              </span>
+                            </div>
+                            <p className="mt-2 text-sm text-slate-600">
+                              This row holds the product identity and its current stock balance.
+                            </p>
                           </div>
                           <div className="rounded-[20px] bg-camp-sand/25 px-4 py-3 text-sm text-slate-700">
-                            Current stock:{' '}
-                            <span className="font-semibold text-camp-forest">{item.quantity}</span>
+                            <p className="text-xs uppercase tracking-[0.18em] text-camp-moss">
+                              Current stock
+                            </p>
+                            <p className="mt-2 text-2xl font-semibold text-camp-forest">
+                              {item.quantity}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="mt-4 grid gap-3 md:grid-cols-2">
+                        <div className="mt-5 grid gap-3 xl:grid-cols-2">
                           <StockMovementForm
                             itemId={item.id}
                             type="in"
