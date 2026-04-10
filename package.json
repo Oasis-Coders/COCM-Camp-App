@@ -10,6 +10,7 @@
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "screenshot:inventory": "node scripts/capture-inventory-screenshot.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
@@ -23,17 +24,18 @@
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.2.0",
     "@types/node": "^22.10.2",
     "@types/react": "^19.0.2",
     "@types/react-dom": "^19.0.2",
     "@vitejs/plugin-react": "^4.4.1",
     "autoprefixer": "^10.4.20",
-    "@eslint/eslintrc": "^3.2.0",
     "eslint": "^8.57.0",
     "eslint-config-next": "^15.0.0",
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-prettier": "^5.2.1",
     "jsdom": "^25.0.1",
+    "playwright": "^1.59.1",
     "postcss": "^8.4.49",
     "prettier": "^3.4.2",
     "prettier-plugin-tailwindcss": "^0.6.9",
