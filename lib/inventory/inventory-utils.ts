@@ -1,116 +1,48 @@
-export const inventoryLocationTypes = ['storage', 'event', 'vehicle', 'room', 'temporary'] as const;
-export type InventoryLocationType = (typeof inventoryLocationTypes)[number];
+export const inventoryMovementTypes = ['in', 'out'] as const;
 
-export const inventoryTransactionTypes = [
-  'receive',
-  'transfer',
-  'checkout',
-  'return',
-  'adjustment',
-] as const;
-export type InventoryTransactionType = (typeof inventoryTransactionTypes)[number];
-
-type QuantityLike = number | string | null | undefined;
+export type InventoryMovementType = (typeof inventoryMovementTypes)[number];
 
 export type InventoryItemRecord = {
   id: string;
+  name: string;
   sku: string;
-  name: string;
-  description: string | null;
-  category: string;
-  unit: string;
-  minimum_stock: QuantityLike;
-  is_checkoutable: boolean;
-  default_location_id: string | null;
-  is_active: boolean;
 };
 
-export type InventoryLocationRecord = {
-  id: string;
-  name: string;
-  code: string;
-  location_type: string;
-  is_active: boolean;
-};
-
-export type InventoryStockLevelRecord = {
+export type InventoryStockRecord = {
   item_id: string;
-  location_id: string;
-  quantity_on_hand: QuantityLike;
-  minimum_stock_override: QuantityLike;
+  quantity: number | string | null;
 };
 
-export type InventoryAssignmentRecord = {
+export type InventoryMovementRecord = {
   id: string;
   item_id: string;
-  source_location_id: string | null;
-  quantity: QuantityLike;
-  status: string;
-};
-
-export type InventoryItemSummary = {
-  id: string;
-  sku: string;
-  name: string;
-  description: string | null;
-  category: string;
-  unit: string;
-  minimumStock: number;
-  isCheckoutable: boolean;
-  defaultLocationId: string | null;
-  defaultLocationName: string | null;
-  totalOnHand: number;
-  checkedOutQuantity: number;
-  lowStock: boolean;
-  lowStockLocations: number;
-  stockByLocation: Array<{
-    locationId: string;
-    locationName: string;
-    quantityOnHand: number;
-    threshold: number;
-    lowStock: boolean;
-  }>;
-};
-
-export type InventoryLocationSummary = {
-  id: string;
-  name: string;
-  code: string;
-  locationType: string;
-  trackedItems: number;
-  totalUnits: number;
-  activeAssignments: number;
+  type: string;
+  quantity: number | string | null;
+  operator_name: string;
+  time: string;
 };
 
 export type InventoryItemInput = {
+  name: string;
   sku: string;
-  name: string;
-  description: string | null;
-  category: string;
-  unit: string;
-  minimumStock: number;
-  defaultLocationId: string | null;
-  isCheckoutable: boolean;
 };
 
-export type InventoryLocationInput = {
-  name: string;
-  code: string;
-  locationType: InventoryLocationType;
+export type InventoryMovementInput = {
+  itemId: string;
+  type: InventoryMovementType;
+  quantity: number;
 };
 
-export type InventoryTransactionInput = {
-  transactionType: InventoryTransactionType;
-  itemId: string | null;
-  assignmentId: string | null;
-  sourceLocationId: string | null;
-  destinationLocationId: string | null;
-  quantity: number | null;
-  reasonCode: string;
-  notes: string | null;
-  assignedToProfileId: string | null;
-  assignedToEventId: string | null;
-  dueBackAt: string | null;
+export type InventoryStockItem = {
+  id: string;
+  name: string;
+  sku: string;
+  quantity: number;
+};
+
+export type InventoryStatusMessage = {
+  tone: 'success' | 'error';
+  text: string;
 };
 
 function normalizeText(value: string | undefined) {
@@ -128,17 +60,7 @@ function requireText(value: string | undefined, label: string) {
   return normalized;
 }
 
-function requireId(value: string | undefined, label: string) {
-  const normalized = normalizeText(value);
-
-  if (!normalized) {
-    throw new Error(`${label} is required`);
-  }
-
-  return normalized;
-}
-
-function toNumber(value: QuantityLike) {
+function toNumber(value: number | string | null | undefined) {
   if (typeof value === 'number') {
     return value;
   }
@@ -156,286 +78,106 @@ function toNumber(value: QuantityLike) {
   return 0;
 }
 
-function requirePositiveNumber(value: string | undefined, label: string) {
-  const normalized = requireText(value, label);
-  const parsed = Number(normalized);
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    throw new Error(`${label} must be greater than zero`);
-  }
-
-  return parsed;
-}
-
-function requireSignedNumber(value: string | undefined, label: string) {
-  const normalized = requireText(value, label);
-  const parsed = Number(normalized);
-
-  if (!Number.isFinite(parsed) || parsed === 0) {
-    throw new Error(`${label} must be a non-zero number`);
-  }
-
-  return parsed;
-}
-
-function requireNonNegativeNumber(value: string | undefined, label: string) {
-  const normalized = requireText(value, label);
-  const parsed = Number(normalized);
-
-  if (!Number.isFinite(parsed) || parsed < 0) {
-    throw new Error(`${label} must be zero or greater`);
-  }
-
-  return parsed;
-}
-
-export function formatInventoryQuantity(value: number) {
-  if (Number.isInteger(value)) {
-    return String(value);
-  }
-
-  return value.toFixed(2).replace(/\.?0+$/, '');
-}
-
-export function isLowStock(quantity: number, threshold: number) {
-  return threshold > 0 && quantity <= threshold;
-}
-
 export function normalizeInventoryItemInput(input: {
-  sku?: string;
   name?: string;
-  description?: string;
-  category?: string;
-  unit?: string;
-  minimumStock?: string;
-  defaultLocationId?: string;
-  isCheckoutable?: string;
+  sku?: string;
 }): InventoryItemInput {
   return {
-    sku: requireText(input.sku, 'SKU').toUpperCase(),
     name: requireText(input.name, 'Item name'),
-    description: normalizeText(input.description),
-    category: requireText(input.category, 'Category'),
-    unit: normalizeText(input.unit) ?? 'each',
-    minimumStock:
-      input.minimumStock && input.minimumStock.trim().length > 0
-        ? requireNonNegativeNumber(input.minimumStock, 'Minimum stock')
-        : 0,
-    defaultLocationId: normalizeText(input.defaultLocationId),
-    isCheckoutable: input.isCheckoutable === 'on',
+    sku: requireText(input.sku, 'SKU').toUpperCase(),
   };
 }
 
-export function normalizeInventoryLocationInput(input: {
-  name?: string;
-  code?: string;
-  locationType?: string;
-}): InventoryLocationInput {
-  const locationType = requireText(input.locationType, 'Location type');
+export function normalizeInventoryMovementInput(input: {
+  itemId?: string;
+  type?: string;
+  quantity?: string;
+}): InventoryMovementInput {
+  const type = requireText(input.type, 'Movement type');
 
-  if (!inventoryLocationTypes.includes(locationType as InventoryLocationType)) {
-    throw new Error('Location type is invalid');
+  if (!inventoryMovementTypes.includes(type as InventoryMovementType)) {
+    throw new Error('Movement type is invalid');
+  }
+
+  const quantityText = requireText(input.quantity, 'Quantity');
+  const quantity = Number(quantityText);
+
+  if (!Number.isInteger(quantity) || quantity <= 0) {
+    throw new Error('Quantity must be a positive whole number');
   }
 
   return {
-    name: requireText(input.name, 'Location name'),
-    code: requireText(input.code, 'Location code').toUpperCase(),
-    locationType: locationType as InventoryLocationType,
+    itemId: requireText(input.itemId, 'Item'),
+    type: type as InventoryMovementType,
+    quantity,
   };
 }
 
-export function normalizeInventoryTransactionInput(input: {
-  transactionType?: string;
-  itemId?: string;
-  assignmentId?: string;
-  sourceLocationId?: string;
-  destinationLocationId?: string;
-  quantity?: string;
-  reasonCode?: string;
-  notes?: string;
-  assignedToProfileId?: string;
-  assignedToEventId?: string;
-  dueBackAt?: string;
-}): InventoryTransactionInput {
-  const transactionType = requireText(input.transactionType, 'Transaction type');
-
-  if (!inventoryTransactionTypes.includes(transactionType as InventoryTransactionType)) {
-    throw new Error('Transaction type is invalid');
-  }
-
-  const normalized: InventoryTransactionInput = {
-    transactionType: transactionType as InventoryTransactionType,
-    itemId: normalizeText(input.itemId),
-    assignmentId: normalizeText(input.assignmentId),
-    sourceLocationId: normalizeText(input.sourceLocationId),
-    destinationLocationId: normalizeText(input.destinationLocationId),
-    quantity: null,
-    reasonCode: requireText(input.reasonCode, 'Reason code'),
-    notes: normalizeText(input.notes),
-    assignedToProfileId: normalizeText(input.assignedToProfileId),
-    assignedToEventId: normalizeText(input.assignedToEventId),
-    dueBackAt: normalizeText(input.dueBackAt),
-  };
-
-  switch (normalized.transactionType) {
-    case 'receive':
-      normalized.itemId = requireId(input.itemId, 'Item');
-      normalized.destinationLocationId = requireId(input.destinationLocationId, 'Destination');
-      normalized.quantity = requirePositiveNumber(input.quantity, 'Quantity');
-      break;
-    case 'transfer':
-      normalized.itemId = requireId(input.itemId, 'Item');
-      normalized.sourceLocationId = requireId(input.sourceLocationId, 'Source location');
-      normalized.destinationLocationId = requireId(input.destinationLocationId, 'Destination');
-      normalized.quantity = requirePositiveNumber(input.quantity, 'Quantity');
-
-      if (normalized.sourceLocationId === normalized.destinationLocationId) {
-        throw new Error('Source and destination must be different');
-      }
-      break;
-    case 'checkout':
-      normalized.itemId = requireId(input.itemId, 'Item');
-      normalized.sourceLocationId = requireId(input.sourceLocationId, 'Source location');
-      normalized.quantity = requirePositiveNumber(input.quantity, 'Quantity');
-
-      if (
-        Number(Boolean(normalized.assignedToProfileId)) +
-          Number(Boolean(normalized.assignedToEventId)) !==
-        1
-      ) {
-        throw new Error('Choose exactly one checkout target');
-      }
-      break;
-    case 'return':
-      normalized.assignmentId = requireId(input.assignmentId, 'Assignment');
-      normalized.destinationLocationId = requireId(input.destinationLocationId, 'Return location');
-      break;
-    case 'adjustment':
-      normalized.itemId = requireId(input.itemId, 'Item');
-      normalized.sourceLocationId = requireId(input.sourceLocationId, 'Location');
-      normalized.quantity = requireSignedNumber(input.quantity, 'Adjustment quantity');
-      break;
-  }
-
-  return normalized;
-}
-
-export function buildInventoryItemSummaries(input: {
+export function buildInventoryStockItems(input: {
   items: InventoryItemRecord[];
-  locations: InventoryLocationRecord[];
-  stockLevels: InventoryStockLevelRecord[];
-  assignments: InventoryAssignmentRecord[];
+  stock: InventoryStockRecord[];
 }) {
-  const locationById = new Map(input.locations.map((location) => [location.id, location]));
-  const activeAssignments = input.assignments.filter(
-    (assignment) => assignment.status === 'active'
+  const stockByItemId = new Map(
+    input.stock.map((entry) => [entry.item_id, toNumber(entry.quantity)])
   );
 
-  return input.items.map<InventoryItemSummary>((item) => {
-    const itemStockLevels = input.stockLevels
-      .filter((level) => level.item_id === item.id)
-      .map((level) => {
-        const threshold =
-          level.minimum_stock_override === null || level.minimum_stock_override === undefined
-            ? toNumber(item.minimum_stock)
-            : toNumber(level.minimum_stock_override);
-        const quantityOnHand = toNumber(level.quantity_on_hand);
-
-        return {
-          locationId: level.location_id,
-          locationName: locationById.get(level.location_id)?.name ?? 'Unknown location',
-          quantityOnHand,
-          threshold,
-          lowStock: isLowStock(quantityOnHand, threshold),
-        };
-      })
-      .sort(
-        (left, right) =>
-          right.quantityOnHand - left.quantityOnHand ||
-          left.locationName.localeCompare(right.locationName)
-      );
-
-    const checkedOutQuantity = activeAssignments
-      .filter((assignment) => assignment.item_id === item.id)
-      .reduce((total, assignment) => total + toNumber(assignment.quantity), 0);
-
-    const totalOnHand = itemStockLevels.reduce((total, level) => total + level.quantityOnHand, 0);
-    const lowStockLocations = itemStockLevels.filter((level) => level.lowStock).length;
-
-    return {
+  return input.items
+    .map<InventoryStockItem>((item) => ({
       id: item.id,
-      sku: item.sku,
       name: item.name,
-      description: item.description,
-      category: item.category,
-      unit: item.unit,
-      minimumStock: toNumber(item.minimum_stock),
-      isCheckoutable: item.is_checkoutable,
-      defaultLocationId: item.default_location_id,
-      defaultLocationName: item.default_location_id
-        ? (locationById.get(item.default_location_id)?.name ?? null)
-        : null,
-      totalOnHand,
-      checkedOutQuantity,
-      lowStock:
-        lowStockLocations > 0 ||
-        (itemStockLevels.length === 0 && isLowStock(0, toNumber(item.minimum_stock))),
-      lowStockLocations,
-      stockByLocation: itemStockLevels,
-    };
-  });
+      sku: item.sku,
+      quantity: stockByItemId.get(item.id) ?? 0,
+    }))
+    .sort(
+      (left, right) => left.name.localeCompare(right.name) || left.sku.localeCompare(right.sku)
+    );
 }
 
-export function buildInventoryLocationSummaries(input: {
-  locations: InventoryLocationRecord[];
-  stockLevels: InventoryStockLevelRecord[];
-  assignments: InventoryAssignmentRecord[];
-}) {
-  return input.locations.map<InventoryLocationSummary>((location) => {
-    const locationStockLevels = input.stockLevels.filter(
-      (level) => level.location_id === location.id
-    );
-    const activeAssignments = input.assignments.filter(
-      (assignment) =>
-        assignment.status === 'active' && assignment.source_location_id === location.id
-    );
-
-    return {
-      id: location.id,
-      name: location.name,
-      code: location.code,
-      locationType: location.location_type,
-      trackedItems: locationStockLevels.length,
-      totalUnits: locationStockLevels.reduce(
-        (total, level) => total + toNumber(level.quantity_on_hand),
-        0
-      ),
-      activeAssignments: activeAssignments.length,
-    };
-  });
-}
-
-export function filterInventorySummaries(
-  items: InventoryItemSummary[],
-  filters: {
-    query?: string;
-    locationId?: string;
-    lowStockOnly?: boolean;
+export function getInventoryStatusMessage(
+  status: string | undefined
+): InventoryStatusMessage | null {
+  switch (status) {
+    case 'item-created':
+      return {
+        tone: 'success',
+        text: 'Item added successfully.',
+      };
+    case 'stock-in':
+      return {
+        tone: 'success',
+        text: 'Stock added successfully.',
+      };
+    case 'stock-out':
+      return {
+        tone: 'success',
+        text: 'Stock removed successfully.',
+      };
+    case 'validation-error':
+      return {
+        tone: 'error',
+        text: 'Please complete the required fields correctly.',
+      };
+    case 'insufficient-stock':
+      return {
+        tone: 'error',
+        text: 'Not enough stock for this outbound movement.',
+      };
+    case 'unauthorized':
+      return {
+        tone: 'error',
+        text: 'You do not have permission to use inventory.',
+      };
+    case 'supabase-unavailable':
+      return {
+        tone: 'error',
+        text: 'Supabase is required before inventory can be used.',
+      };
+    case 'operation-failed':
+      return {
+        tone: 'error',
+        text: 'Inventory action failed. Please try again.',
+      };
+    default:
+      return null;
   }
-) {
-  const normalizedQuery = filters.query?.trim().toLowerCase() ?? '';
-
-  return items.filter((item) => {
-    const matchesQuery =
-      !normalizedQuery ||
-      [item.name, item.sku, item.category]
-        .filter(Boolean)
-        .some((value) => value.toLowerCase().includes(normalizedQuery));
-    const matchesLocation =
-      !filters.locationId ||
-      item.stockByLocation.some((location) => location.locationId === filters.locationId);
-    const matchesLowStock = !filters.lowStockOnly || item.lowStock;
-
-    return matchesQuery && matchesLocation && matchesLowStock;
-  });
 }
