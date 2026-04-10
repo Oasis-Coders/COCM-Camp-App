@@ -142,6 +142,11 @@ export function getInventoryStatusMessage(
         tone: 'success',
         text: 'Item added successfully.',
       };
+    case 'item-deleted':
+      return {
+        tone: 'success',
+        text: 'Item deleted successfully.',
+      };
     case 'stock-in':
       return {
         tone: 'success',

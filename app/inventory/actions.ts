@@ -9,10 +9,12 @@ import {
   normalizeInventoryItemInput,
   normalizeInventoryMovementInput,
 } from '@/lib/inventory/inventory-utils';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { logServerError } from '@/lib/observability/logger';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 
-type InventoryStatus =
+export type InventoryStatus =
   | 'item-created'
+  | 'item-deleted'
   | 'stock-in'
   | 'stock-out'
   | 'validation-error'
@@ -21,6 +23,11 @@ type InventoryStatus =
   | 'supabase-unavailable'
   | 'operation-failed';
 
+export type InventoryActionState = {
+  status: InventoryStatus | null;
+  submittedAt: number | null;
+};
+
 async function getInventoryActionContext() {
   const session = await getSession();
 
@@ -28,23 +35,15 @@ async function getInventoryActionContext() {
     throw new Error('Inventory access denied');
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
-    throw new Error('Supabase client unavailable');
-  }
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Inventory access denied');
+    throw new Error('Supabase admin client unavailable');
   }
 
   return {
     supabase,
-    operatorName: session.displayName || user.email || 'Camp user',
+    operatorName: session.displayName || session.email || 'Camp user',
   };
 }
 
@@ -55,13 +54,26 @@ function redirectToInventory(status: InventoryStatus) {
 }
 
 function mapInventoryError(error: unknown): InventoryStatus {
-  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ? error.message.toLowerCase()
+        : '';
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+      ? error.code
+      : '';
 
   if (message.includes('not enough stock')) {
     return 'insufficient-stock';
   }
 
   if (
+    code === '23505' ||
     message.includes('required') ||
     message.includes('invalid') ||
     message.includes('quantity') ||
@@ -82,32 +94,123 @@ function mapInventoryError(error: unknown): InventoryStatus {
   return 'operation-failed';
 }
 
-export async function createInventoryItem(formData: FormData) {
+export async function createInventoryItem(
+  _previousState: InventoryActionState,
+  formData: FormData
+): Promise<InventoryActionState> {
   try {
     const input = normalizeInventoryItemInput({
       name: String(formData.get('name') ?? ''),
       sku: String(formData.get('sku') ?? ''),
     });
 
+    const { supabase, operatorName } = await getInventoryActionContext();
+
+    const { data: createdItem, error: itemError } = await supabase
+      .from('inventory_items')
+      .insert({
+        name: input.name,
+        sku: input.sku,
+      })
+      .select('id')
+      .single();
+
+    if (itemError) {
+      throw itemError;
+    }
+
+    const { error: stockError } = await supabase.from('inventory_stock').insert({
+      item_id: createdItem.id,
+      quantity: 0,
+    });
+
+    if (stockError) {
+      throw stockError;
+    }
+
+    const { error: movementError } = await supabase.from('inventory_movements').insert({
+      item_id: createdItem.id,
+      type: 'in',
+      quantity: 1,
+      operator_name: operatorName,
+    });
+
+    if (movementError) {
+      throw movementError;
+    }
+
+    revalidatePath('/inventory');
+    revalidatePath('/inventory/history');
+
+    return {
+      status: 'item-created',
+      submittedAt: Date.now(),
+    };
+  } catch (error) {
+    logServerError({
+      scope: 'inventory.create_item',
+      message: 'Error creating inventory item',
+      error,
+      context: {
+        itemName: String(formData.get('name') ?? ''),
+        sku: String(formData.get('sku') ?? ''),
+      },
+    });
+
+    return {
+      status: mapInventoryError(error),
+      submittedAt: Date.now(),
+    };
+  }
+}
+
+export async function deleteInventoryItem(
+  _previousState: InventoryActionState,
+  formData: FormData
+): Promise<InventoryActionState> {
+  try {
+    const itemId = String(formData.get('itemId') ?? '').trim();
+
+    if (!itemId) {
+      throw new Error('Item is required');
+    }
+
     const { supabase } = await getInventoryActionContext();
 
-    const { error } = await supabase.rpc('inventory_add_item', {
-      p_name: input.name,
-      p_sku: input.sku,
-    });
+    const { error } = await supabase.from('inventory_items').delete().eq('id', itemId);
 
     if (error) {
       throw error;
     }
 
-    redirectToInventory('item-created');
+    revalidatePath('/inventory');
+    revalidatePath('/inventory/history');
+
+    return {
+      status: 'item-deleted',
+      submittedAt: Date.now(),
+    };
   } catch (error) {
-    console.error('Error creating inventory item:', error);
-    redirectToInventory(mapInventoryError(error));
+    logServerError({
+      scope: 'inventory.delete_item',
+      message: 'Error deleting inventory item',
+      error,
+      context: {
+        itemId: String(formData.get('itemId') ?? ''),
+      },
+    });
+
+    return {
+      status: mapInventoryError(error),
+      submittedAt: Date.now(),
+    };
   }
 }
 
-export async function applyInventoryMovement(formData: FormData) {
+export async function applyInventoryMovement(
+  _previousState: InventoryActionState,
+  formData: FormData
+): Promise<InventoryActionState> {
   try {
     const input = normalizeInventoryMovementInput({
       itemId: String(formData.get('itemId') ?? ''),
@@ -117,20 +220,65 @@ export async function applyInventoryMovement(formData: FormData) {
 
     const { supabase, operatorName } = await getInventoryActionContext();
 
-    const { error } = await supabase.rpc('inventory_apply_movement', {
-      p_item_id: input.itemId,
-      p_type: input.type,
-      p_quantity: input.quantity,
-      p_operator_name: operatorName,
-    });
+    const { data: stockRow, error: stockReadError } = await supabase
+      .from('inventory_stock')
+      .select('quantity')
+      .eq('item_id', input.itemId)
+      .single();
 
-    if (error) {
-      throw error;
+    if (stockReadError) {
+      throw stockReadError;
     }
 
-    redirectToInventory(input.type === 'in' ? 'stock-in' : 'stock-out');
+    if (input.type === 'out' && stockRow.quantity < input.quantity) {
+      throw new Error('Not enough stock');
+    }
+
+    const nextQuantity =
+      input.type === 'in' ? stockRow.quantity + input.quantity : stockRow.quantity - input.quantity;
+
+    const { error: stockUpdateError } = await supabase
+      .from('inventory_stock')
+      .update({ quantity: nextQuantity })
+      .eq('item_id', input.itemId);
+
+    if (stockUpdateError) {
+      throw stockUpdateError;
+    }
+
+    const { error: movementError } = await supabase.from('inventory_movements').insert({
+      item_id: input.itemId,
+      type: input.type,
+      quantity: input.quantity,
+      operator_name: operatorName,
+    });
+
+    if (movementError) {
+      throw movementError;
+    }
+
+    revalidatePath('/inventory');
+    revalidatePath('/inventory/history');
+
+    return {
+      status: input.type === 'in' ? 'stock-in' : 'stock-out',
+      submittedAt: Date.now(),
+    };
   } catch (error) {
-    console.error('Error applying inventory movement:', error);
-    redirectToInventory(mapInventoryError(error));
+    logServerError({
+      scope: 'inventory.apply_movement',
+      message: 'Error applying inventory movement',
+      error,
+      context: {
+        itemId: String(formData.get('itemId') ?? ''),
+        movementType: String(formData.get('type') ?? ''),
+        quantity: String(formData.get('quantity') ?? ''),
+      },
+    });
+
+    return {
+      status: mapInventoryError(error),
+      submittedAt: Date.now(),
+    };
   }
 }
