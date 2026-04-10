@@ -14,8 +14,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 import { CreateItemForm } from './create-item-form';
-import { DeleteItemButton } from './delete-item-button';
-import { StockMovementForm } from './stock-movement-form';
+import { StockSearchList } from './stock-search-list';
 
 type InventoryPageProps = {
   searchParams: Promise<{
@@ -217,52 +216,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                       No stock records yet.
                     </div>
                   ) : (
-                    stockItems.map((item) => (
-                      <article
-                        key={item.id}
-                        className="rounded-[24px] border border-camp-forest/10 bg-white p-4"
-                      >
-                        <div className="grid gap-3 xl:grid-cols-[minmax(120px,1fr)_112px_minmax(205px,1fr)_minmax(215px,1fr)_40px] xl:items-center">
-                          <div className="min-w-0">
-                            <p className="truncate text-lg font-semibold text-camp-forest">
-                              {item.name}
-                            </p>
-                            <span className="mt-1 inline-flex rounded-full bg-camp-sky/60 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.16em] text-camp-forest">
-                              {item.sku}
-                            </span>
-                          </div>
-
-                          <div className="rounded-[18px] bg-camp-sand/25 px-3 py-2 text-sm text-slate-700 shadow-[inset_0_0_0_1px_rgba(12,58,42,0.03)]">
-                            <p className="text-[11px] uppercase tracking-[0.16em] text-camp-moss">
-                              Stock
-                            </p>
-                            <p className="mt-1 text-xl font-semibold text-camp-forest">
-                              {item.quantity}
-                            </p>
-                          </div>
-
-                          <div className="rounded-[18px] border border-camp-forest/10 bg-camp-sky/15 p-2">
-                            <StockMovementForm
-                              itemId={item.id}
-                              type="in"
-                              tone="primary"
-                              label="In"
-                            />
-                          </div>
-
-                          <div className="rounded-[18px] border border-camp-forest/10 bg-camp-sand/25 p-2">
-                            <StockMovementForm
-                              itemId={item.id}
-                              type="out"
-                              tone="secondary"
-                              label="Out"
-                            />
-                          </div>
-
-                          <DeleteItemButton itemId={item.id} itemName={item.name} sku={item.sku} />
-                        </div>
-                      </article>
-                    ))
+                    <StockSearchList items={stockItems} />
                   )}
                 </div>
               </InventorySectionCard>

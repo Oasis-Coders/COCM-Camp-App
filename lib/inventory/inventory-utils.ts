@@ -40,6 +40,8 @@ export type InventoryStockItem = {
   quantity: number;
 };
 
+export type InventoryStockSearchFilter = 'name' | 'sku';
+
 export type InventoryStatusMessage = {
   tone: 'success' | 'error';
   text: string;
@@ -131,6 +133,20 @@ export function buildInventoryStockItems(input: {
     .sort(
       (left, right) => left.name.localeCompare(right.name) || left.sku.localeCompare(right.sku)
     );
+}
+
+export function filterInventoryStockItems(
+  items: InventoryStockItem[],
+  query: string,
+  filter: InventoryStockSearchFilter
+) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return items;
+  }
+
+  return items.filter((item) => item[filter].toLowerCase().includes(normalizedQuery));
 }
 
 export function getInventoryStatusMessage(

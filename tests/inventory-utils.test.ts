@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   buildInventoryStockItems,
+  filterInventoryStockItems,
   getInventoryStatusMessage,
   normalizeInventoryItemInput,
   normalizeInventoryMovementInput,
@@ -85,6 +86,17 @@ describe('inventory utils', () => {
         quantity: 4,
       },
     ]);
+  });
+
+  it('filters stock rows by name or sku', () => {
+    const items = [
+      { id: 'item-1', name: 'Bottled Water', sku: 'WATER-001', quantity: 12 },
+      { id: 'item-2', name: 'Walkie Talkie', sku: 'RADIO-001', quantity: 4 },
+    ];
+
+    expect(filterInventoryStockItems(items, 'water', 'name')).toEqual([items[0]]);
+    expect(filterInventoryStockItems(items, 'radio', 'sku')).toEqual([items[1]]);
+    expect(filterInventoryStockItems(items, ' ', 'sku')).toEqual(items);
   });
 
   it('maps inventory status codes to user-facing messages', () => {
