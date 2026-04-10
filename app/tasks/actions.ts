@@ -10,6 +10,7 @@ import {
   type TaskStatus,
   type TaskPriority,
 } from '@/lib/tasks/task-model';
+import { emitTaskEvent } from '@/lib/notifications/emit';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -83,21 +84,42 @@ export async function createTask(input: CreateTaskInput) {
     throw new Error('Title is required');
   }
 
-  const { error } = await supabase.from('tasks').insert({
-    title: input.title.trim(),
-    description: input.description?.trim() || null,
-    status,
-    priority,
-    assigned_to: input.assignedTo || null,
-    event_id: input.eventId || null,
-    due_at: input.dueAt || null,
-    created_by: profileId,
-  });
+  const { data: newTask, error } = await supabase
+    .from('tasks')
+    .insert({
+      title: input.title.trim(),
+      description: input.description?.trim() || null,
+      status,
+      priority,
+      assigned_to: input.assignedTo || null,
+      event_id: input.eventId || null,
+      due_at: input.dueAt || null,
+      created_by: profileId,
+    })
+    .select('id')
+    .single();
 
   if (error) {
     console.error('Error creating task:', error);
     throw new Error('Failed to create task');
   }
+
+  // --- Notification trigger: task.created ---
+  emitTaskEvent(
+    {
+      name: 'task.created',
+      payload: {
+        taskId: newTask.id,
+        taskTitle: input.title.trim(),
+        eventId: input.eventId || null,
+        actorProfileId: profileId,
+        assigneeProfileId: input.assignedTo || null,
+        status,
+        priority,
+      },
+    },
+    { creatorProfileId: profileId, assigneeProfileId: input.assignedTo || null }
+  );
 
   revalidatePath('/tasks');
   revalidatePath('/admin/tasks');
@@ -114,10 +136,10 @@ export async function updateTaskStatus(taskId: string, newStatus: string) {
     throw new Error(`Invalid status: ${newStatus}`);
   }
 
-  // Fetch current status to validate transition
+  // Fetch current task to validate transition and get context
   const { data: task, error: fetchError } = await supabase
     .from('tasks')
-    .select('status')
+    .select('status, title, assigned_to, created_by, event_id')
     .eq('id', taskId)
     .single();
 
@@ -134,9 +156,10 @@ export async function updateTaskStatus(taskId: string, newStatus: string) {
   // Build update payload
   const updatePayload: Record<string, unknown> = { status: newStatus };
 
+  const profileId = await getCurrentProfileId(supabase);
+
   // If completing, record who completed it
   if (newStatus === 'done') {
-    const profileId = await getCurrentProfileId(supabase);
     updatePayload.completed_by = profileId;
   }
 
@@ -145,6 +168,45 @@ export async function updateTaskStatus(taskId: string, newStatus: string) {
   if (error) {
     console.error('Error updating task status:', error);
     throw new Error('Failed to update task status');
+  }
+
+  // --- Notification triggers for status changes ---
+  const notificationContext = {
+    creatorProfileId: task.created_by ?? undefined,
+    assigneeProfileId: task.assigned_to,
+  };
+
+  if (newStatus === 'done') {
+    // task.completed — specific event for completion
+    emitTaskEvent(
+      {
+        name: 'task.completed',
+        payload: {
+          taskId,
+          taskTitle: task.title,
+          eventId: task.event_id,
+          actorProfileId: profileId,
+          assigneeProfileId: task.assigned_to,
+        },
+      },
+      notificationContext
+    );
+  } else {
+    // task.status_changed — general status transition
+    emitTaskEvent(
+      {
+        name: 'task.status_changed',
+        payload: {
+          taskId,
+          taskTitle: task.title,
+          eventId: task.event_id,
+          actorProfileId: profileId,
+          fromStatus: currentStatus,
+          toStatus: newStatus as TaskStatus,
+        },
+      },
+      notificationContext
+    );
   }
 
   revalidatePath('/tasks');
@@ -159,6 +221,19 @@ export async function assignTask(taskId: string, profileId: string | null) {
   const { session, supabase } = await getAuthenticatedSupabase();
   requireStaff(session.role);
 
+  const actorProfileId = await getCurrentProfileId(supabase);
+
+  // Fetch current task to get previous assignee and title
+  const { data: task, error: fetchError } = await supabase
+    .from('tasks')
+    .select('title, assigned_to, created_by, event_id')
+    .eq('id', taskId)
+    .single();
+
+  if (fetchError || !task) {
+    throw new Error('Task not found');
+  }
+
   const { error } = await supabase
     .from('tasks')
     .update({ assigned_to: profileId })
@@ -167,6 +242,38 @@ export async function assignTask(taskId: string, profileId: string | null) {
   if (error) {
     console.error('Error assigning task:', error);
     throw new Error('Failed to assign task');
+  }
+
+  // --- Notification trigger: task.assigned / task.unassigned ---
+  if (profileId) {
+    emitTaskEvent(
+      {
+        name: 'task.assigned',
+        payload: {
+          taskId,
+          taskTitle: task.title,
+          eventId: task.event_id,
+          actorProfileId,
+          assigneeProfileId: profileId,
+          previousAssigneeProfileId: task.assigned_to,
+        },
+      },
+      { creatorProfileId: task.created_by ?? undefined, assigneeProfileId: profileId }
+    );
+  } else if (task.assigned_to) {
+    emitTaskEvent(
+      {
+        name: 'task.unassigned',
+        payload: {
+          taskId,
+          taskTitle: task.title,
+          eventId: task.event_id,
+          actorProfileId,
+          previousAssigneeProfileId: task.assigned_to,
+        },
+      },
+      { creatorProfileId: task.created_by ?? undefined }
+    );
   }
 
   revalidatePath('/tasks');
@@ -190,23 +297,52 @@ export async function updateTaskDetails(taskId: string, input: UpdateTaskDetails
   const { session, supabase } = await getAuthenticatedSupabase();
   requireStaff(session.role);
 
+  const actorProfileId = await getCurrentProfileId(supabase);
+
+  // Fetch current task for change tracking and notification context
+  const { data: task, error: fetchError } = await supabase
+    .from('tasks')
+    .select('title, description, priority, due_at, event_id, assigned_to, created_by')
+    .eq('id', taskId)
+    .single();
+
+  if (fetchError || !task) {
+    throw new Error('Task not found');
+  }
+
   const payload: Record<string, unknown> = {};
+  const changes: { field: string; oldValue?: string | null; newValue?: string | null }[] = [];
 
   if (input.title !== undefined) {
     if (!input.title.trim()) throw new Error('Title cannot be empty');
+    if (input.title.trim() !== task.title) {
+      changes.push({ field: 'title', oldValue: task.title, newValue: input.title.trim() });
+    }
     payload.title = input.title.trim();
   }
   if (input.description !== undefined) {
+    if ((input.description?.trim() || null) !== (task.description || null)) {
+      changes.push({ field: 'description' });
+    }
     payload.description = input.description?.trim() || null;
   }
   if (input.priority !== undefined) {
     if (!isTaskPriority(input.priority)) throw new Error(`Invalid priority: ${input.priority}`);
+    if (input.priority !== task.priority) {
+      changes.push({ field: 'priority', oldValue: task.priority, newValue: input.priority });
+    }
     payload.priority = input.priority;
   }
   if (input.dueAt !== undefined) {
+    if (input.dueAt !== task.due_at) {
+      changes.push({ field: 'due_at', oldValue: task.due_at, newValue: input.dueAt });
+    }
     payload.due_at = input.dueAt;
   }
   if (input.eventId !== undefined) {
+    if (input.eventId !== task.event_id) {
+      changes.push({ field: 'event_id', oldValue: task.event_id, newValue: input.eventId });
+    }
     payload.event_id = input.eventId;
   }
   if (input.assignedTo !== undefined) {
@@ -222,6 +358,26 @@ export async function updateTaskDetails(taskId: string, input: UpdateTaskDetails
     throw new Error('Failed to update task details');
   }
 
+  // --- Notification trigger: task.updated (only if something actually changed) ---
+  if (changes.length > 0) {
+    emitTaskEvent(
+      {
+        name: 'task.updated',
+        payload: {
+          taskId,
+          taskTitle: input.title?.trim() ?? task.title,
+          eventId: input.eventId !== undefined ? input.eventId : task.event_id,
+          actorProfileId,
+          changes,
+        },
+      },
+      {
+        creatorProfileId: task.created_by ?? undefined,
+        assigneeProfileId: task.assigned_to,
+      }
+    );
+  }
+
   revalidatePath('/tasks');
   revalidatePath('/admin/tasks');
 }
@@ -234,11 +390,40 @@ export async function deleteTask(taskId: string) {
   const { session, supabase } = await getAuthenticatedSupabase();
   requireStaff(session.role);
 
+  const actorProfileId = await getCurrentProfileId(supabase);
+
+  // Fetch task info before deletion for notification
+  const { data: task } = await supabase
+    .from('tasks')
+    .select('title, assigned_to, created_by, event_id')
+    .eq('id', taskId)
+    .single();
+
   const { error } = await supabase.from('tasks').delete().eq('id', taskId);
 
   if (error) {
     console.error('Error deleting task:', error);
     throw new Error('Failed to delete task');
+  }
+
+  // --- Notification trigger: task.deleted ---
+  if (task) {
+    emitTaskEvent(
+      {
+        name: 'task.deleted',
+        payload: {
+          taskId,
+          taskTitle: task.title,
+          eventId: task.event_id,
+          actorProfileId,
+          assigneeProfileId: task.assigned_to,
+        },
+      },
+      {
+        creatorProfileId: task.created_by ?? undefined,
+        assigneeProfileId: task.assigned_to,
+      }
+    );
   }
 
   revalidatePath('/tasks');

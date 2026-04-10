@@ -27,3 +27,13 @@
 - Status transitions are validated in the application layer (`lib/tasks/task-model.ts`) and enforced by database check constraints
 - Completion tracking (`completed_at`, `completed_by`) is handled by a database trigger
 - See [docs/task-workflow.md](task-workflow.md) for the full status model, assignment rules, and team workflow reference
+
+## Notification system
+
+- Task lifecycle events (create, assign, status change, complete, delete) emit structured notification events
+- Events are defined in `lib/notifications/task-events.ts` as a discriminated union with typed payloads
+- `emitTaskEvent()` is fire-and-forget — notification failures never break task operations
+- Every event is logged to `task_notification_log` with recipient, actor, summary, and full payload
+- Recipient resolution follows consistent rules: the actor is never self-notified, assignees and creators are informed
+- Delivery (email, push, in-app) is decoupled and will subscribe to the log table
+- See [docs/task-notifications.md](task-notifications.md) for the event catalog and architecture
