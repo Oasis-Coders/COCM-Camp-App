@@ -11,6 +11,7 @@ import {
   type TaskPriority,
 } from '@/lib/tasks/task-model';
 import { emitTaskEvent } from '@/lib/notifications/emit';
+import { logServerError } from '@/lib/observability/logger';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -166,7 +167,15 @@ export async function updateTaskStatus(taskId: string, newStatus: string) {
   const { error } = await supabase.from('tasks').update(updatePayload).eq('id', taskId);
 
   if (error) {
-    console.error('Error updating task status:', error);
+    logServerError({
+      scope: 'tasks.update_status',
+      message: 'Error updating task status',
+      error,
+      context: {
+        status,
+        taskId,
+      },
+    });
     throw new Error('Failed to update task status');
   }
 

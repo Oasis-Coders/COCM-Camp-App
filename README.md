@@ -67,6 +67,16 @@ This phase focuses on the first meaningful product loop:
 - Early admin event management
 - Dashboard and event experience for signed-in users
 
+**Implemented in this phase:**
+
+- `/events` — filterable event listing (All / Upcoming / Past) via `?filter=` query param
+- `/events/[slug]` — event detail page with live registration count and status display
+- `/events/[slug]/register` — dedicated multi-section registration form (mirroring the COCM Jotform structure) with capacity-aware status assignment and JSON payload storage
+- `/dashboard` — personal dashboard showing the user's active registrations with colour-coded status
+- `/admin/events/[id]/registrations` — staff/admin attendee roster grouped by registration status
+- `lib/events/registration-utils.ts` — pure utility functions for capacity calculation, waitlist promotion, payload serialisation, and attendee grouping
+- `tests/events.test.ts` — 32 automated unit tests covering all events logic (capacity, waitlist, form payload, admin grouping, filter classification)
+
 ### Phase 2: Tasks and check-in
 
 This phase adds the operational tools the team will use during real events:

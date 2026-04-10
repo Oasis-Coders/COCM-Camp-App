@@ -1,18 +1,83 @@
+/**
+ * app/events/page.tsx
+ *
+ * Public event listing page. Accessible to all authenticated users.
+ *
+ * Filter behaviour (via ?filter= query param):
+ *   - 'upcoming' — only shows events whose starts_at is in the future
+ *   - 'past'     — only shows events whose starts_at has already passed (reversed order)
+ *   - 'all'      — shows all events (default when param is missing)
+ *
+ * Each event card links to /events/[slug] for the detail + registration view.
+ */
 import Link from 'next/link';
 
 import { AppShell } from '@/components/layout/app-shell';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export default async function EventsPage() {
-  const supabase = await createSupabaseServerClient();
+type EventsPageProps = {
+  searchParams: Promise<{
+    filter?: string;
+  }>;
+};
 
-  const { data: events } = await (supabase
-    ?.from('events')
+export default async function EventsPage({ searchParams }: EventsPageProps) {
+  const { filter } = await searchParams;
+  const currentFilter = filter || 'all';
+
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return null;
+
+  let query = supabase
+    .from('events')
     .select('id, title, slug, location, starts_at, ends_at, status, capacity')
-    .order('starts_at', { ascending: true }) ?? { data: [] });
+    .order('starts_at', { ascending: currentFilter !== 'past' });
+
+  const now = new Date().toISOString();
+
+  if (currentFilter === 'upcoming') {
+    query = query.gte('starts_at', now);
+  } else if (currentFilter === 'past') {
+    query = query.lt('starts_at', now);
+  }
+
+  const { data: events } = await query;
 
   return (
     <AppShell title="Events" eyebrow="Authenticated area">
+      <div className="mb-6 flex gap-3">
+        <Link
+          href="/events?filter=all"
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+            currentFilter === 'all'
+              ? 'bg-camp-forest text-white'
+              : 'bg-white/85 text-slate-600 shadow-sm hover:bg-white'
+          }`}
+        >
+          All
+        </Link>
+        <Link
+          href="/events?filter=upcoming"
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+            currentFilter === 'upcoming'
+              ? 'bg-camp-forest text-white'
+              : 'bg-white/85 text-slate-600 shadow-sm hover:bg-white'
+          }`}
+        >
+          Upcoming
+        </Link>
+        <Link
+          href="/events?filter=past"
+          className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
+            currentFilter === 'past'
+              ? 'bg-camp-forest text-white'
+              : 'bg-white/85 text-slate-600 shadow-sm hover:bg-white'
+          }`}
+        >
+          Past
+        </Link>
+      </div>
+
       <div className="grid gap-4">
         {(events || []).length === 0 ? (
           <p className="text-sm text-slate-500">No events found.</p>
