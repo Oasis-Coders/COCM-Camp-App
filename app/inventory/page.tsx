@@ -222,7 +222,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                         key={item.id}
                         className="rounded-[24px] border border-camp-forest/10 bg-white p-4"
                       >
-                        <div className="grid gap-3 xl:grid-cols-[minmax(120px,1fr)_112px_40px_minmax(205px,1fr)_minmax(215px,1fr)] xl:items-center">
+                        <div className="grid gap-3 xl:grid-cols-[minmax(120px,1fr)_112px_minmax(205px,1fr)_minmax(215px,1fr)_40px] xl:items-center">
                           <div className="min-w-0">
                             <p className="truncate text-lg font-semibold text-camp-forest">
                               {item.name}
@@ -240,7 +240,6 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                               {item.quantity}
                             </p>
                           </div>
-                          <DeleteItemButton itemId={item.id} itemName={item.name} sku={item.sku} />
 
                           <div className="rounded-[18px] border border-camp-forest/10 bg-camp-sky/15 p-2">
                             <StockMovementForm
@@ -259,6 +258,8 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                               label="Out"
                             />
                           </div>
+
+                          <DeleteItemButton itemId={item.id} itemName={item.name} sku={item.sku} />
                         </div>
                       </article>
                     ))

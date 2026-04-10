@@ -22,7 +22,7 @@ function DeleteSubmitButton() {
       disabled={pending}
       aria-label={pending ? 'Deleting item' : 'Delete item'}
       title={pending ? 'Deleting item' : 'Delete item'}
-      className="inline-flex size-10 items-center justify-center rounded-full border border-[#e8b8aa] bg-[#fff7f3] text-[#8b4b3b] shadow-sm transition hover:-translate-y-0.5 hover:border-[#d69380] hover:bg-[#ffefe7] hover:text-[#743728] disabled:cursor-wait disabled:opacity-70"
+      className="inline-flex size-10 items-center justify-center rounded-full border border-camp-forest/10 bg-camp-sand/35 text-camp-moss shadow-sm transition hover:-translate-y-0.5 hover:border-camp-moss/25 hover:bg-camp-sand/55 hover:text-camp-forest disabled:cursor-wait disabled:opacity-70"
     >
       <svg
         aria-hidden="true"

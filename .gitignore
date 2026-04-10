@@ -4,7 +4,7 @@ node_modules
 .env.local
 .env.production
 coverage
-artifacts/screenshots
+artifacts
 .vercel
 tsconfig.tsbuildinfo
 supabase/.branches
