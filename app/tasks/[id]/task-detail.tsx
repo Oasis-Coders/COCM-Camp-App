@@ -134,7 +134,7 @@ export function TaskDetail({
         </div>
 
         {/* Edit form (staff only, non-terminal) */}
-        {isEditing && isStaff && <EditForm task={task} events={events} />}
+        {isEditing && isStaff && <EditForm task={task} events={events} profiles={profiles} />}
 
         {/* Description */}
         {task.description && !isEditing && (
@@ -287,9 +287,11 @@ export function TaskDetail({
 function EditForm({
   task,
   events,
+  profiles,
 }: {
   task: TaskWithProfile;
   events: { id: string; title: string }[];
+  profiles: { id: string; display_name: string | null }[];
 }) {
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -305,6 +307,7 @@ function EditForm({
     const description = fd.get('description') as string;
     const priority = fd.get('priority') as string;
     const eventId = fd.get('eventId') as string;
+    const assignedTo = fd.get('assignedTo') as string;
     const dueAt = fd.get('dueAt') as string;
 
     startTransition(async () => {
@@ -314,6 +317,7 @@ function EditForm({
           description,
           priority,
           eventId: eventId || null,
+          assignedTo: assignedTo || null,
           dueAt: dueAt ? new Date(dueAt).toISOString() : null,
         });
         setSuccess(true);
@@ -372,7 +376,7 @@ function EditForm({
           />
         </div>
 
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label
               htmlFor="edit-priority"
@@ -393,6 +397,27 @@ function EditForm({
               ))}
             </select>
           </div>
+          <div>
+            <label htmlFor="edit-assign" className="mb-1 block text-xs font-medium text-slate-500">
+              Assignee
+            </label>
+            <select
+              id="edit-assign"
+              name="assignedTo"
+              defaultValue={task.assigned_to ?? ''}
+              className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
+            >
+              <option value="">Unassigned</option>
+              {profiles.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.display_name ?? 'Unknown'}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
             <label htmlFor="edit-event" className="mb-1 block text-xs font-medium text-slate-500">
               Event

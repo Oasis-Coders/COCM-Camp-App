@@ -183,6 +183,7 @@ export type UpdateTaskDetailsInput = {
   priority?: string;
   dueAt?: string | null;
   eventId?: string | null;
+  assignedTo?: string | null;
 };
 
 export async function updateTaskDetails(taskId: string, input: UpdateTaskDetailsInput) {
@@ -207,6 +208,9 @@ export async function updateTaskDetails(taskId: string, input: UpdateTaskDetails
   }
   if (input.eventId !== undefined) {
     payload.event_id = input.eventId;
+  }
+  if (input.assignedTo !== undefined) {
+    payload.assigned_to = input.assignedTo;
   }
 
   if (Object.keys(payload).length === 0) return;

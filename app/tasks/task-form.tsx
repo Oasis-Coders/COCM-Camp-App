@@ -1,16 +1,19 @@
 'use client';
 
 import { useTransition, useState, useRef } from 'react';
-import { createTask } from './actions';
+import { createTask, updateTaskDetails } from './actions';
 import { TASK_PRIORITIES, TASK_PRIORITY_LABELS, type TaskPriority } from '@/lib/tasks/task-model';
+import type { TaskWithProfile } from './task-list';
 
-type CreateTaskFormProps = {
+type TaskFormProps = {
   onClose: () => void;
   events: { id: string; title: string }[];
   staffProfiles: { id: string; display_name: string | null }[];
+  task?: TaskWithProfile;
 };
 
-export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFormProps) {
+export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps) {
+  const isEditing = !!task;
   const [isPending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
@@ -35,27 +38,48 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
 
     startTransition(async () => {
       try {
-        await createTask({
-          title,
-          description,
-          priority,
-          status,
-          assignedTo: assignedTo || undefined,
-          eventId: eventId || undefined,
-          dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
-        });
+        if (isEditing && task) {
+          await updateTaskDetails(task.id, {
+            title: title || undefined,
+            description: description || undefined,
+            priority: priority || undefined,
+            assignedTo: assignedTo || null,
+            eventId: eventId || null,
+            dueAt: dueAt ? new Date(dueAt).toISOString() : null,
+          });
+        } else {
+          await createTask({
+            title,
+            description,
+            priority,
+            status,
+            assignedTo: assignedTo || undefined,
+            eventId: eventId || undefined,
+            dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
+          });
+        }
         onClose();
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to create task');
+        setError(err instanceof Error ? err.message : 'Failed to save task');
       }
     });
+  };
+
+  // Convert ISO string to local datetime-local format (YYYY-MM-DDThh:mm)
+  const formatDateTime = (dateString: string | null | undefined) => {
+    if (!dateString) return '';
+    const d = new Date(dateString);
+    const pad = (n: number) => n.toString().padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="mx-4 w-full max-w-lg rounded-[28px] border border-camp-forest/10 bg-white p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
-          <h3 className="font-serif text-2xl text-camp-forest">New Task</h3>
+          <h3 className="font-serif text-2xl text-camp-forest">
+            {isEditing ? 'Edit Task' : 'New Task'}
+          </h3>
           <button
             onClick={onClose}
             className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
@@ -79,6 +103,7 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
               name="title"
               type="text"
               required
+              defaultValue={task?.title}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
               placeholder="e.g. Finalize counselor roster"
             />
@@ -96,6 +121,7 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
               id="task-description"
               name="description"
               rows={3}
+              defaultValue={task?.description ?? ''}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
               placeholder="Optional details about what needs to happen…"
             />
@@ -113,7 +139,7 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
               <select
                 id="task-priority"
                 name="priority"
-                defaultValue="medium"
+                defaultValue={task?.priority ?? 'medium'}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
               >
                 {TASK_PRIORITIES.map((p) => (
@@ -123,23 +149,25 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
                 ))}
               </select>
             </div>
-            <div>
-              <label
-                htmlFor="task-status"
-                className="mb-1 block text-xs font-medium text-slate-500"
-              >
-                Initial Status
-              </label>
-              <select
-                id="task-status"
-                name="status"
-                defaultValue="draft"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
-              >
-                <option value="draft">Draft</option>
-                <option value="open">Open</option>
-              </select>
-            </div>
+            {!isEditing && (
+              <div>
+                <label
+                  htmlFor="task-status"
+                  className="mb-1 block text-xs font-medium text-slate-500"
+                >
+                  Initial Status
+                </label>
+                <select
+                  id="task-status"
+                  name="status"
+                  defaultValue="draft"
+                  className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
+                >
+                  <option value="draft">Draft</option>
+                  <option value="open">Open</option>
+                </select>
+              </div>
+            )}
           </div>
 
           {/* Assignee + Event row */}
@@ -154,7 +182,7 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
               <select
                 id="task-assignee"
                 name="assignedTo"
-                defaultValue=""
+                defaultValue={task?.assigned_to ?? ''}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
               >
                 <option value="">Unassigned</option>
@@ -172,7 +200,7 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
               <select
                 id="task-event"
                 name="eventId"
-                defaultValue=""
+                defaultValue={task?.event_id ?? ''}
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
               >
                 <option value="">No event</option>
@@ -194,6 +222,7 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
               id="task-due"
               name="dueAt"
               type="datetime-local"
+              defaultValue={formatDateTime(task?.due_at)}
               className="w-full rounded-xl border border-slate-200 px-4 py-2.5 text-sm focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
             />
           </div>
@@ -213,7 +242,13 @@ export function CreateTaskForm({ onClose, events, staffProfiles }: CreateTaskFor
               disabled={isPending}
               className="flex-1 rounded-full bg-camp-forest px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-camp-forest/90 disabled:opacity-60"
             >
-              {isPending ? 'Creating…' : 'Create Task'}
+              {isPending
+                ? isEditing
+                  ? 'Saving…'
+                  : 'Creating…'
+                : isEditing
+                  ? 'Save Changes'
+                  : 'Create Task'}
             </button>
           </div>
         </form>
