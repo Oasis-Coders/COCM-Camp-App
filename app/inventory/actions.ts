@@ -48,13 +48,26 @@ function redirectToInventory(status: InventoryStatus) {
 }
 
 function mapInventoryError(error: unknown): InventoryStatus {
-  const message = error instanceof Error ? error.message.toLowerCase() : '';
+  const message =
+    error instanceof Error
+      ? error.message.toLowerCase()
+      : typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ? error.message.toLowerCase()
+        : '';
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+      ? error.code
+      : '';
 
   if (message.includes('not enough stock')) {
     return 'insufficient-stock';
   }
 
   if (
+    code === '23505' ||
     message.includes('required') ||
     message.includes('invalid') ||
     message.includes('quantity') ||
