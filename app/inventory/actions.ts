@@ -9,6 +9,7 @@ import {
   normalizeInventoryItemInput,
   normalizeInventoryMovementInput,
 } from '@/lib/inventory/inventory-utils';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 type InventoryStatus =
@@ -28,23 +29,15 @@ async function getInventoryActionContext() {
     throw new Error('Inventory access denied');
   }
 
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient() ?? (await createSupabaseServerClient());
 
   if (!supabase) {
     throw new Error('Supabase client unavailable');
   }
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) {
-    throw new Error('Inventory access denied');
-  }
-
   return {
     supabase,
-    operatorName: session.displayName || user.email || 'Camp user',
+    operatorName: session.displayName || session.email || 'Camp user',
   };
 }
 
