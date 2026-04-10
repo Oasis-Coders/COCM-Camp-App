@@ -23,18 +23,34 @@ function toneClasses(tone: 'success' | 'error') {
 
 function SubmitButton({ label, tone }: { label: string; tone: 'primary' | 'secondary' }) {
   const { pending } = useFormStatus();
+  const isPrimary = tone === 'primary';
 
   return (
     <button
       type="submit"
       disabled={pending}
-      className={`inline-flex min-w-[70px] items-center justify-center rounded-full px-3 py-2 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
-        tone === 'primary'
+      aria-label={pending ? 'Saving inventory movement' : label}
+      title={pending ? 'Saving inventory movement' : label}
+      className={`inline-flex size-10 items-center justify-center rounded-full transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70 ${
+        isPrimary
           ? 'bg-camp-forest text-white hover:bg-camp-forest/90'
           : 'bg-camp-sand/65 text-camp-forest hover:bg-camp-sand'
       }`}
     >
-      {pending ? 'Saving...' : label}
+      <svg
+        aria-hidden="true"
+        className="size-4"
+        fill="none"
+        stroke="currentColor"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth="2"
+        viewBox="0 0 24 24"
+      >
+        {isPrimary ? <path d="M12 5v14" /> : null}
+        <path d="M5 12h14" />
+      </svg>
+      <span className="sr-only">{pending ? 'Saving inventory movement' : label}</span>
     </button>
   );
 }
