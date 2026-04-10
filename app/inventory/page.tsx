@@ -10,6 +10,7 @@ import {
   type InventoryItemRecord,
   type InventoryStockRecord,
 } from '@/lib/inventory/inventory-utils';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 import { applyInventoryMovement, createInventoryItem } from './actions';
@@ -28,7 +29,7 @@ type InventoryDataBundle = {
 };
 
 async function loadInventoryData(): Promise<InventoryDataBundle> {
-  const supabase = await createSupabaseServerClient();
+  const supabase = createSupabaseAdminClient() ?? (await createSupabaseServerClient());
 
   if (!supabase) {
     return {
