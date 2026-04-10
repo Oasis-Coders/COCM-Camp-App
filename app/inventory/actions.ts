@@ -10,7 +10,6 @@ import {
   normalizeInventoryMovementInput,
 } from '@/lib/inventory/inventory-utils';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 type InventoryStatus =
   | 'item-created'
@@ -29,10 +28,10 @@ async function getInventoryActionContext() {
     throw new Error('Inventory access denied');
   }
 
-  const supabase = createSupabaseAdminClient() ?? (await createSupabaseServerClient());
+  const supabase = createSupabaseAdminClient();
 
   if (!supabase) {
-    throw new Error('Supabase client unavailable');
+    throw new Error('Supabase admin client unavailable');
   }
 
   return {
@@ -84,13 +83,26 @@ export async function createInventoryItem(formData: FormData) {
 
     const { supabase } = await getInventoryActionContext();
 
-    const { error } = await supabase.rpc('inventory_add_item', {
-      p_name: input.name,
-      p_sku: input.sku,
+    const { data: createdItem, error: itemError } = await supabase
+      .from('inventory_items')
+      .insert({
+        name: input.name,
+        sku: input.sku,
+      })
+      .select('id')
+      .single();
+
+    if (itemError) {
+      throw itemError;
+    }
+
+    const { error: stockError } = await supabase.from('inventory_stock').insert({
+      item_id: createdItem.id,
+      quantity: 0,
     });
 
-    if (error) {
-      throw error;
+    if (stockError) {
+      throw stockError;
     }
 
     redirectToInventory('item-created');
@@ -110,15 +122,41 @@ export async function applyInventoryMovement(formData: FormData) {
 
     const { supabase, operatorName } = await getInventoryActionContext();
 
-    const { error } = await supabase.rpc('inventory_apply_movement', {
-      p_item_id: input.itemId,
-      p_type: input.type,
-      p_quantity: input.quantity,
-      p_operator_name: operatorName,
+    const { data: stockRow, error: stockReadError } = await supabase
+      .from('inventory_stock')
+      .select('quantity')
+      .eq('item_id', input.itemId)
+      .single();
+
+    if (stockReadError) {
+      throw stockReadError;
+    }
+
+    if (input.type === 'out' && stockRow.quantity < input.quantity) {
+      throw new Error('Not enough stock');
+    }
+
+    const nextQuantity =
+      input.type === 'in' ? stockRow.quantity + input.quantity : stockRow.quantity - input.quantity;
+
+    const { error: stockUpdateError } = await supabase
+      .from('inventory_stock')
+      .update({ quantity: nextQuantity })
+      .eq('item_id', input.itemId);
+
+    if (stockUpdateError) {
+      throw stockUpdateError;
+    }
+
+    const { error: movementError } = await supabase.from('inventory_movements').insert({
+      item_id: input.itemId,
+      type: input.type,
+      quantity: input.quantity,
+      operator_name: operatorName,
     });
 
-    if (error) {
-      throw error;
+    if (movementError) {
+      throw movementError;
     }
 
     redirectToInventory(input.type === 'in' ? 'stock-in' : 'stock-out');
