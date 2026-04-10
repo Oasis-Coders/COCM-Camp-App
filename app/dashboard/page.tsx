@@ -12,7 +12,7 @@ export default async function DashboardPage() {
   const { count: activeTaskCount } = await (supabase
     ?.from('tasks')
     .select('*', { count: 'exact', head: true })
-    .in('status', ['todo', 'in_progress']) ?? { count: 0 });
+    .in('status', ['open', 'in_progress', 'blocked']) ?? { count: 0 });
 
   const { count: checkinCount } = await (supabase
     ?.from('checkins')
@@ -29,7 +29,7 @@ export default async function DashboardPage() {
         <MetricCard
           label="Active tasks"
           value={String(activeTaskCount ?? 0)}
-          helper="Tasks in 'todo' or 'in progress' status."
+          helper="Tasks in 'open', 'in progress', or 'blocked' status."
         />
         <MetricCard
           label="Check-ins"
