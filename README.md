@@ -27,17 +27,22 @@ The long-term product direction includes:
 
 ## Current phase
 
-We are currently in the infrastructure and foundation phase.
+We are currently entering Phase 2 (Tasks and check-in). Foundation and access layers are in place, and core task management is now fully operational.
 
-That means the current priority is:
+Completed so far:
 
-- Establish the main app structure
-- Create the first version of the user flow and navigation
-- Set up the database foundation and permissions model
-- Make the project easy for multiple collaborators to work in
-- Prepare the repo for testing, review, and deployment
+- ✅ Main app structure and navigation
+- ✅ Sign-in flow and auth with Supabase
+- ✅ Database foundation with RLS and role-based permissions
+- ✅ Event browsing, registration, and admin management
+- ✅ Inventory tracking
+- ✅ Task management — create, assign, reprioritize, transition, and close tasks (admin/staff)
+- ✅ CI/CD and deployment to Vercel
 
-This phase is successful when the team has a stable base to build on and new contributors can join without needing to reconstruct the project direction from scratch.
+Current priority:
+
+- Check-in workflows (code generation, manual and guided flows)
+- Remaining staff/admin operational controls
 
 ## Delivery roadmap
 
@@ -76,10 +81,15 @@ This phase focuses on the first meaningful product loop:
 
 This phase adds the operational tools the team will use during real events:
 
-- Task workflows
+- ✅ Task workflows — full lifecycle (Draft → Open → In Progress → Blocked → Done / Cancelled)
+- ✅ Task CRUD — create, edit, delete with staff authorization
+- ✅ Task assignment — assign/reassign to any profile, with staff-only controls
+- ✅ Task reprioritization — low / medium / high / urgent
+- ✅ Status transitions — validated state machine with DB constraints and app-level guards
+- ✅ Admin & staff task management UI — list view with filters, detail view with inline editing
 - Check-in code generation
 - Manual and guided check-in flows
-- Staff and admin operational controls
+- Staff and admin operational controls (remaining items)
 
 ### Phase 3: Chat foundation
 
@@ -148,4 +158,4 @@ This project is on track when:
 
 ## Project snapshot
 
-We are building a camp and event operations app in phases. Right now the mission is to create a clean, collaborative foundation for authentication, permissions, events, tasks, and check-in so the team can confidently build the real product on top of it.
+We are building a camp and event operations app in phases. The foundation (auth, permissions, events, inventory) is complete. Task management for admins and staff is now fully operational — including create, assign, reprioritize, status transitions, and close. The next milestone is check-in workflows.
