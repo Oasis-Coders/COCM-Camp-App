@@ -14,6 +14,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 import { CreateItemForm } from './create-item-form';
+import { DeleteItemButton } from './delete-item-button';
 import { StockMovementForm } from './stock-movement-form';
 
 type InventoryPageProps = {
@@ -233,13 +234,16 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                               This row holds the product identity and its current stock balance.
                             </p>
                           </div>
-                          <div className="rounded-[20px] bg-camp-sand/25 px-4 py-3 text-sm text-slate-700">
-                            <p className="text-xs uppercase tracking-[0.18em] text-camp-moss">
-                              Current stock
-                            </p>
-                            <p className="mt-2 text-2xl font-semibold text-camp-forest">
-                              {item.quantity}
-                            </p>
+                          <div className="grid justify-items-end gap-3">
+                            <DeleteItemButton itemId={item.id} itemName={item.name} />
+                            <div className="rounded-[20px] bg-camp-sand/25 px-4 py-3 text-sm text-slate-700">
+                              <p className="text-xs uppercase tracking-[0.18em] text-camp-moss">
+                                Current stock
+                              </p>
+                              <p className="mt-2 text-2xl font-semibold text-camp-forest">
+                                {item.quantity}
+                              </p>
+                            </div>
                           </div>
                         </div>
 

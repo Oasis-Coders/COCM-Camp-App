@@ -14,6 +14,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 
 export type InventoryStatus =
   | 'item-created'
+  | 'item-deleted'
   | 'stock-in'
   | 'stock-out'
   | 'validation-error'
@@ -153,6 +154,49 @@ export async function createInventoryItem(
       context: {
         itemName: String(formData.get('name') ?? ''),
         sku: String(formData.get('sku') ?? ''),
+      },
+    });
+
+    return {
+      status: mapInventoryError(error),
+      submittedAt: Date.now(),
+    };
+  }
+}
+
+export async function deleteInventoryItem(
+  _previousState: InventoryActionState,
+  formData: FormData
+): Promise<InventoryActionState> {
+  try {
+    const itemId = String(formData.get('itemId') ?? '').trim();
+
+    if (!itemId) {
+      throw new Error('Item is required');
+    }
+
+    const { supabase } = await getInventoryActionContext();
+
+    const { error } = await supabase.from('inventory_items').delete().eq('id', itemId);
+
+    if (error) {
+      throw error;
+    }
+
+    revalidatePath('/inventory');
+    revalidatePath('/inventory/history');
+
+    return {
+      status: 'item-deleted',
+      submittedAt: Date.now(),
+    };
+  } catch (error) {
+    logServerError({
+      scope: 'inventory.delete_item',
+      message: 'Error deleting inventory item',
+      error,
+      context: {
+        itemId: String(formData.get('itemId') ?? ''),
       },
     });
 
