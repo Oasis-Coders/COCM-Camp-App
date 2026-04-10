@@ -235,7 +235,11 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                             </p>
                           </div>
                           <div className="grid justify-items-end gap-3">
-                            <DeleteItemButton itemId={item.id} itemName={item.name} sku={item.sku} />
+                            <DeleteItemButton
+                              itemId={item.id}
+                              itemName={item.name}
+                              sku={item.sku}
+                            />
                             <div className="rounded-[20px] bg-camp-sand/25 px-4 py-3 text-sm text-slate-700">
                               <p className="text-xs uppercase tracking-[0.18em] text-camp-moss">
                                 Current stock

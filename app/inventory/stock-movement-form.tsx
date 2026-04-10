@@ -28,7 +28,7 @@ function SubmitButton({ label, tone }: { label: string; tone: 'primary' | 'secon
     <button
       type="submit"
       disabled={pending}
-      className={`inline-flex items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
+      className={`inline-flex min-w-[116px] items-center justify-center rounded-full px-4 py-2.5 text-sm font-semibold transition disabled:cursor-wait disabled:opacity-70 ${
         tone === 'primary'
           ? 'bg-camp-forest text-white hover:bg-camp-forest/90'
           : 'bg-camp-sand/65 text-camp-forest hover:bg-camp-sand'
@@ -88,19 +88,28 @@ export function StockMovementForm({
         </section>
       ) : null}
 
-      <label className="grid gap-2 text-sm text-slate-700">
-        <span className="font-medium text-camp-forest">{quantityLabel}</span>
-        <input
-          type="number"
-          name="quantity"
-          min="1"
-          step="1"
-          required
-          className="rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/60"
-        />
-      </label>
+      <div className="grid gap-3 lg:grid-cols-[minmax(0,1fr)_132px_116px] lg:items-end">
+        <div className="text-sm text-slate-700">
+          <p className="font-medium text-camp-forest">{label}</p>
+          <p className="mt-1 text-xs text-slate-500">{quantityLabel}</p>
+        </div>
 
-      <SubmitButton label={label} tone={tone} />
+        <label className="grid gap-2 text-sm text-slate-700">
+          <span className="text-xs font-medium uppercase tracking-[0.14em] text-camp-moss">
+            Qty
+          </span>
+          <input
+            type="number"
+            name="quantity"
+            min="1"
+            step="1"
+            required
+            className="rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/60"
+          />
+        </label>
+
+        <SubmitButton label={label} tone={tone} />
+      </div>
     </form>
   );
 }
