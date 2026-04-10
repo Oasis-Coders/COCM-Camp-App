@@ -221,3 +221,22 @@ export async function updateTaskDetails(taskId: string, input: UpdateTaskDetails
   revalidatePath('/tasks');
   revalidatePath('/admin/tasks');
 }
+
+// ---------------------------------------------------------------------------
+// Delete Task
+// ---------------------------------------------------------------------------
+
+export async function deleteTask(taskId: string) {
+  const { session, supabase } = await getAuthenticatedSupabase();
+  requireStaff(session.role);
+
+  const { error } = await supabase.from('tasks').delete().eq('id', taskId);
+
+  if (error) {
+    console.error('Error deleting task:', error);
+    throw new Error('Failed to delete task');
+  }
+
+  revalidatePath('/tasks');
+  revalidatePath('/admin/tasks');
+}
