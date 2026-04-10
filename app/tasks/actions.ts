@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSession } from '@/lib/auth/session';
+import { logServerError } from '@/lib/observability/logger';
 
 export async function updateTaskStatus(taskId: string, status: string) {
   const session = await getSession();
@@ -18,7 +19,15 @@ export async function updateTaskStatus(taskId: string, status: string) {
   const { error } = await supabase.from('tasks').update({ status }).eq('id', taskId);
 
   if (error) {
-    console.error('Error updating task status:', error);
+    logServerError({
+      scope: 'tasks.update_status',
+      message: 'Error updating task status',
+      error,
+      context: {
+        status,
+        taskId,
+      },
+    });
     throw new Error('Failed to update task status');
   }
 

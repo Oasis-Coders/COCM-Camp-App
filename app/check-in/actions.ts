@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getSession } from '@/lib/auth/session';
+import { logServerError } from '@/lib/observability/logger';
 
 export async function toggleCheckIn(eventId: string, userId: string, isCheckingIn: boolean) {
   const session = await getSession();
@@ -42,7 +43,15 @@ export async function toggleCheckIn(eventId: string, userId: string, isCheckingI
     });
 
     if (error) {
-      console.error('Error checking in:', error);
+      logServerError({
+        scope: 'check_in.manual_in',
+        message: 'Error checking in',
+        error,
+        context: {
+          eventId,
+          userId,
+        },
+      });
       throw new Error('Failed to check in');
     }
   } else {
@@ -52,7 +61,15 @@ export async function toggleCheckIn(eventId: string, userId: string, isCheckingI
     });
 
     if (error) {
-      console.error('Error un-checking in:', error);
+      logServerError({
+        scope: 'check_in.manual_out',
+        message: 'Error un-checking in',
+        error,
+        context: {
+          eventId,
+          userId,
+        },
+      });
       throw new Error('Failed to un-check in');
     }
   }
