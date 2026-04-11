@@ -4,6 +4,7 @@ import {
   buildInventoryStockItems,
   filterInventoryStockItems,
   getInventoryStatusMessage,
+  isInventoryDeleteHistoryCompatibilityError,
   isMissingInventoryMovementSnapshotColumnError,
   normalizeInventoryItemInput,
   normalizeInventoryMovementInput,
@@ -139,6 +140,31 @@ describe('inventory utils', () => {
       isMissingInventoryMovementSnapshotColumnError({
         code: 'PGRST204',
         message: "Could not find the 'name' column of 'inventory_items' in the schema cache",
+      })
+    ).toBe(false);
+  });
+
+  it('detects delete history compatibility errors', () => {
+    expect(
+      isInventoryDeleteHistoryCompatibilityError({
+        code: '23514',
+        message:
+          'new row for relation "inventory_movements" violates check constraint "inventory_movements_type_check"',
+      })
+    ).toBe(true);
+
+    expect(
+      isInventoryDeleteHistoryCompatibilityError({
+        code: '23502',
+        message:
+          'null value in column "item_id" of relation "inventory_movements" violates not-null constraint',
+      })
+    ).toBe(true);
+
+    expect(
+      isInventoryDeleteHistoryCompatibilityError({
+        code: '23514',
+        message: 'new row for relation "tasks" violates check constraint "tasks_status_check"',
       })
     ).toBe(false);
   });

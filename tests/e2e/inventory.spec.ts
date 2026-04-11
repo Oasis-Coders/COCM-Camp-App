@@ -114,6 +114,25 @@ test.describe.serial('inventory e2e', () => {
     await expect(page.getByText('Inventory action failed. Please try again.')).toHaveCount(0);
   });
 
+  test('deletes an item without showing the generic failure message', async ({ page }) => {
+    const skuPrefix = `PW-E2E-${Date.now()}-`;
+    const sku = `${skuPrefix}DELETE`;
+    const itemName = `Playwright Delete ${Date.now()}`;
+    skuPrefixes.add(skuPrefix);
+
+    await createInventoryItem(page, { name: itemName, sku });
+
+    const card = itemCard(page, itemName);
+    page.once('dialog', async (dialog) => {
+      expect(dialog.message()).toContain(itemName);
+      await dialog.accept();
+    });
+
+    await card.getByRole('button', { name: 'Delete item' }).click();
+    await expect(page.getByText(itemName, { exact: true })).toHaveCount(0);
+    await expect(page.getByText('Inventory action failed. Please try again.')).toHaveCount(0);
+  });
+
   test('shows stock movements in inventory history', async ({ page }) => {
     const skuPrefix = `PW-E2E-${Date.now()}-`;
     const sku = `${skuPrefix}HISTORY`;

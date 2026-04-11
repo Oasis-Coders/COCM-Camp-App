@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { staffPrivilegedRoles } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
 import {
+  isInventoryDeleteHistoryCompatibilityError,
   isMissingInventoryMovementSnapshotColumnError,
   normalizeInventoryItemInput,
   normalizeInventoryMovementInput,
@@ -237,14 +238,31 @@ export async function deleteInventoryItem(
       throw error;
     }
 
-    await insertInventoryMovement(supabase, {
-      item_id: null,
-      item_name: item.name,
-      item_sku: item.sku,
-      type: 'delete',
-      quantity: stockRow?.quantity ?? 0,
-      operator_name: operatorName,
-    });
+    try {
+      await insertInventoryMovement(supabase, {
+        item_id: null,
+        item_name: item.name,
+        item_sku: item.sku,
+        type: 'delete',
+        quantity: stockRow?.quantity ?? 0,
+        operator_name: operatorName,
+      });
+    } catch (movementError) {
+      if (!isInventoryDeleteHistoryCompatibilityError(movementError)) {
+        throw movementError;
+      }
+
+      logServerError({
+        scope: 'inventory.delete_item_history',
+        message: 'Inventory item was deleted, but delete history could not be recorded',
+        error: movementError,
+        context: {
+          itemId,
+          itemName: item.name,
+          sku: item.sku,
+        },
+      });
+    }
 
     revalidatePath('/inventory');
     revalidatePath('/inventory/history');
