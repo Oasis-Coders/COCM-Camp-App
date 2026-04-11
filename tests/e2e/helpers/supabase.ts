@@ -11,7 +11,9 @@ type E2EUser = {
   displayName: string;
 };
 
-const envFiles = ['.env.local', '.env'];
+type E2ERole = 'super_admin' | 'admin' | 'staff' | 'participant';
+
+const envFiles = ['.env.e2e.local', '.env.local', '.env'];
 let envLoaded = false;
 
 function loadEnvFile(filePath: string) {
@@ -56,9 +58,9 @@ export function hasSupabaseE2EEnv() {
   loadE2EEnv();
 
   return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL &&
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY &&
-    process.env.SUPABASE_SERVICE_ROLE_KEY
+    process.env.E2E_SUPABASE_URL &&
+    process.env.E2E_SUPABASE_ANON_KEY &&
+    process.env.E2E_SUPABASE_SERVICE_ROLE_KEY
   );
 }
 
@@ -69,34 +71,37 @@ export function createE2ESupabaseAdminClient() {
     throw new Error('Supabase e2e environment variables are missing');
   }
 
-  return createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-    {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    }
-  );
+  return createClient(process.env.E2E_SUPABASE_URL!, process.env.E2E_SUPABASE_SERVICE_ROLE_KEY!, {
+    auth: {
+      autoRefreshToken: false,
+      persistSession: false,
+    },
+  });
 }
 
-export async function createE2EStaffUser(supabase: SupabaseClient): Promise<E2EUser> {
+export async function createE2EUser(
+  supabase: SupabaseClient,
+  input: {
+    role: E2ERole;
+    emailPrefix?: string;
+    displayNamePrefix?: string;
+  }
+): Promise<E2EUser> {
   const runId = randomUUID().slice(0, 8);
-  const email = `codex-e2e-${runId}@example.com`;
+  const email = `${input.emailPrefix ?? 'codex-e2e'}-${runId}@example.com`;
   const password = `CodexE2E!${runId}Aa1`;
-  const displayName = `Codex E2E ${runId}`;
+  const displayName = `${input.displayNamePrefix ?? 'Codex E2E'} ${runId}`;
 
   const { data, error } = await supabase.auth.admin.createUser({
     email,
     password,
     email_confirm: true,
-    app_metadata: { role: 'staff' },
+    app_metadata: { role: input.role },
     user_metadata: { display_name: displayName },
   });
 
   if (error || !data.user) {
-    throw error ?? new Error('Could not create e2e staff user');
+    throw error ?? new Error('Could not create e2e user');
   }
 
   return {
@@ -105,6 +110,10 @@ export async function createE2EStaffUser(supabase: SupabaseClient): Promise<E2EU
     password,
     displayName,
   };
+}
+
+export async function createE2EStaffUser(supabase: SupabaseClient): Promise<E2EUser> {
+  return createE2EUser(supabase, { role: 'staff' });
 }
 
 export async function deleteE2EUser(supabase: SupabaseClient, userId: string | undefined) {
@@ -116,6 +125,20 @@ export async function deleteE2EUser(supabase: SupabaseClient, userId: string | u
 
   if (error) {
     throw error;
+  }
+}
+
+export async function deleteE2EUsersByEmailPrefix(supabase: SupabaseClient, emailPrefix: string) {
+  const { data, error } = await supabase.auth.admin.listUsers();
+
+  if (error) {
+    throw error;
+  }
+
+  const users = data.users.filter((user) => user.email?.startsWith(emailPrefix));
+
+  for (const user of users) {
+    await deleteE2EUser(supabase, user.id);
   }
 }
 

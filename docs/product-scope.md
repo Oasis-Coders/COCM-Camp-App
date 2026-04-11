@@ -4,7 +4,7 @@
 
 - Public landing page and sign-in entrypoint
 - Protected app shell for dashboard, events, tasks, check-in, profile, and admin areas
-- Supabase-ready environment strategy
+- Supabase-ready environment strategy with separate production and e2e test projects
 - Initial schema for profiles, roles, events, tasks, check-ins, and future chat
 - CI workflow for lint, typecheck, test, and build
 - PWA metadata and install icons

@@ -49,7 +49,14 @@ jobs:
         with:
           version: latest
 
-      - name: Push migrations to hosted project
+      - name: Push migrations to hosted test project
+        if: secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_TEST_PROJECT_ID != ''
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_TEST_PROJECT_ID }}
+        run: supabase db push --project-ref "$SUPABASE_PROJECT_ID"
+
+      - name: Push migrations to hosted production project
         if: secrets.SUPABASE_ACCESS_TOKEN != '' && secrets.SUPABASE_PROJECT_ID != ''
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}

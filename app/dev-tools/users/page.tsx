@@ -3,16 +3,13 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 
 import { AppShell } from '@/components/layout/app-shell';
-import { appRoles } from '@/lib/app-config';
-import {
-  buildDirectoryEntries,
-  normalizePasswordResetInput,
-  normalizeRoleActionInput,
-} from '@/lib/dev-tools/user-directory';
+import { buildDirectoryEntries, normalizePasswordResetInput } from '@/lib/dev-tools/user-directory';
 import { getSession } from '@/lib/auth/session';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { hasSupabaseAdminEnv } from '@/lib/supabase/env';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+
+import { RoleChangeForm } from './role-change-form';
 
 async function loadDirectoryEntries() {
   if (!hasSupabaseAdminEnv()) {
@@ -60,85 +57,6 @@ async function loadCurrentAuthUserId() {
   } = await supabase.auth.getUser();
 
   return user?.id ?? null;
-}
-
-async function changeUserRole(formData: FormData) {
-  'use server';
-
-  const userId = String(formData.get('userId') ?? '');
-  const targetRole = normalizeRoleActionInput(String(formData.get('role') ?? 'participant'));
-  const currentUserId = String(formData.get('currentUserId') ?? '');
-
-  const supabase = createSupabaseAdminClient();
-
-  if (!supabase) {
-    redirect('/dev-tools/users?directory=unavailable');
-  }
-
-  const { data: authUserData, error: authUserError } =
-    await supabase.auth.admin.getUserById(userId);
-
-  if (authUserError || !authUserData.user) {
-    redirect('/dev-tools/users?directory=role-error');
-  }
-
-  const user = authUserData.user;
-  const { error: authUpdateError } = await supabase.auth.admin.updateUserById(userId, {
-    app_metadata: {
-      ...(user.app_metadata ?? {}),
-      role: targetRole,
-    },
-    user_metadata: {
-      ...(user.user_metadata ?? {}),
-      role: targetRole,
-    },
-  });
-
-  if (authUpdateError) {
-    redirect('/dev-tools/users?directory=role-error');
-  }
-
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('id')
-    .eq('auth_user_id', userId)
-    .maybeSingle<{ id: string }>();
-
-  if (profile?.id) {
-    const { data: roleRecord, error: roleError } = await supabase
-      .from('roles')
-      .select('id')
-      .eq('name', targetRole)
-      .single<{ id: string }>();
-
-    if (roleError || !roleRecord) {
-      redirect('/dev-tools/users?directory=role-error');
-    }
-
-    const { error: deleteRolesError } = await supabase
-      .from('user_roles')
-      .delete()
-      .eq('user_id', profile.id);
-
-    if (deleteRolesError) {
-      redirect('/dev-tools/users?directory=role-error');
-    }
-
-    const { error: insertRoleError } = await supabase.from('user_roles').insert({
-      user_id: profile.id,
-      role_id: roleRecord.id,
-    });
-
-    if (insertRoleError) {
-      redirect('/dev-tools/users?directory=role-error');
-    }
-  }
-
-  revalidatePath('/dev-tools/users');
-  revalidatePath('/profile');
-  redirect(
-    `/dev-tools/users?directory=${userId === currentUserId ? 'current-role-updated' : 'role-updated'}`
-  );
 }
 
 async function resetUserPassword(formData: FormData) {
@@ -360,40 +278,11 @@ export default async function DevToolsUsersPage({
                       </td>
                       <td className="px-4 py-4 align-top">
                         <div className="min-w-56 space-y-4">
-                          <form action={changeUserRole} className="space-y-2">
-                            <input type="hidden" name="userId" value={entry.authUserId} />
-                            <input
-                              type="hidden"
-                              name="currentUserId"
-                              value={currentAuthUserId ?? ''}
-                            />
-                            <label
-                              htmlFor={`role-${entry.authUserId}`}
-                              className="block text-xs font-semibold uppercase tracking-[0.2em] text-camp-moss"
-                            >
-                              Change role
-                            </label>
-                            <div className="flex gap-2">
-                              <select
-                                id={`role-${entry.authUserId}`}
-                                name="role"
-                                defaultValue={entry.role.replace(' ', '_')}
-                                className="w-full rounded-xl border border-camp-forest/15 px-3 py-2 text-sm outline-none focus:border-camp-forest/40"
-                              >
-                                {appRoles.map((role) => (
-                                  <option key={role} value={role}>
-                                    {role.replace('_', ' ')}
-                                  </option>
-                                ))}
-                              </select>
-                              <button
-                                type="submit"
-                                className="rounded-xl bg-camp-forest px-3 py-2 text-sm font-semibold text-white transition hover:bg-camp-moss"
-                              >
-                                Save
-                              </button>
-                            </div>
-                          </form>
+                          <RoleChangeForm
+                            authUserId={entry.authUserId}
+                            currentAuthUserId={currentAuthUserId ?? ''}
+                            initialRole={entry.role}
+                          />
 
                           <form action={resetUserPassword} className="space-y-2">
                             <input type="hidden" name="userId" value={entry.authUserId} />
