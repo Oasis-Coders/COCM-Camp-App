@@ -89,16 +89,15 @@ test.describe.serial('account e2e', () => {
       .locator('xpath=ancestor::tr[1]');
     await expect(currentUserRow).toBeVisible();
     await currentUserRow.getByLabel('Change role').selectOption('admin');
+    await expect(page).toHaveURL(/\/dev-tools\/users$/);
     await currentUserRow.getByRole('button', { name: 'Save' }).click();
 
-    await page.waitForFunction(() =>
-      window.location.search.includes('directory=current-role-updated')
-    );
     await expect(
-      page.getByText(
+      currentUserRow.getByText(
         'User role updated successfully. Reload the app if your own navigation should change immediately.'
       )
     ).toBeVisible();
+    await expect(page).toHaveURL(/\/dev-tools\/users$/);
     await expect(page.getByText('The role change could not be completed.')).toHaveCount(0);
 
     await page.goto('/profile');
