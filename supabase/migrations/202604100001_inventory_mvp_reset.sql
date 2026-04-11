@@ -32,9 +32,11 @@ create table if not exists public.inventory_stock (
 
 create table if not exists public.inventory_movements (
   id uuid primary key default gen_random_uuid(),
-  item_id uuid not null references public.inventory_items(id) on delete cascade,
-  type text not null check (type in ('in', 'out')),
-  quantity integer not null check (quantity > 0),
+  item_id uuid references public.inventory_items(id) on delete set null,
+  item_name text,
+  item_sku text,
+  type text not null check (type in ('in', 'out', 'delete')),
+  quantity integer not null check (quantity >= 0),
   operator_name text not null,
   time timestamptz not null default timezone('utc', now())
 );
