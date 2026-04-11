@@ -5,6 +5,8 @@ node_modules
 .env.production
 coverage
 artifacts
+test-results
+playwright-report
 .vercel
 tsconfig.tsbuildinfo
 supabase/.branches

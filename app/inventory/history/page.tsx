@@ -5,6 +5,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { staffPrivilegedRoles } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
 import {
+  isMissingInventoryMovementSnapshotColumnError,
   type InventoryItemRecord,
   type InventoryMovementRecord,
 } from '@/lib/inventory/inventory-utils';
@@ -32,24 +33,36 @@ async function loadInventoryHistory(): Promise<InventoryHistoryBundle> {
     };
   }
 
-  const [itemsResult, movementsResult] = await Promise.all([
+  const [itemsResult, initialMovementsResult] = await Promise.all([
     supabase.from('inventory_items').select('id, name, sku'),
     supabase
       .from('inventory_movements')
       .select('id, item_id, item_name, item_sku, type, quantity, operator_name, time')
       .order('time', { ascending: false }),
   ]);
+  let movementsData = (initialMovementsResult.data ?? []) as InventoryMovementRecord[];
+  let movementsError = initialMovementsResult.error;
+
+  if (isMissingInventoryMovementSnapshotColumnError(movementsError)) {
+    const compatibleMovementsResult = await supabase
+      .from('inventory_movements')
+      .select('id, item_id, type, quantity, operator_name, time')
+      .order('time', { ascending: false });
+
+    movementsData = (compatibleMovementsResult.data ?? []) as InventoryMovementRecord[];
+    movementsError = compatibleMovementsResult.error;
+  }
 
   const errors = [
     itemsResult.error ? 'Inventory items could not be loaded.' : null,
-    movementsResult.error ? 'Inventory history could not be loaded.' : null,
+    movementsError ? 'Inventory history could not be loaded.' : null,
   ].filter(Boolean) as string[];
 
   return {
     enabled: true,
     errors,
     items: (itemsResult.data ?? []) as InventoryItemRecord[],
-    movements: (movementsResult.data ?? []) as InventoryMovementRecord[],
+    movements: movementsData,
   };
 }
 

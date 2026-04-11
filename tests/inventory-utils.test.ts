@@ -4,6 +4,7 @@ import {
   buildInventoryStockItems,
   filterInventoryStockItems,
   getInventoryStatusMessage,
+  isMissingInventoryMovementSnapshotColumnError,
   normalizeInventoryItemInput,
   normalizeInventoryMovementInput,
 } from '@/lib/inventory/inventory-utils';
@@ -116,5 +117,29 @@ describe('inventory utils', () => {
     });
 
     expect(getInventoryStatusMessage(undefined)).toBeNull();
+  });
+
+  it('detects missing inventory movement snapshot columns', () => {
+    expect(
+      isMissingInventoryMovementSnapshotColumnError({
+        code: 'PGRST204',
+        message:
+          "Could not find the 'item_name' column of 'inventory_movements' in the schema cache",
+      })
+    ).toBe(true);
+
+    expect(
+      isMissingInventoryMovementSnapshotColumnError({
+        code: '42703',
+        message: 'column inventory_movements.item_sku does not exist',
+      })
+    ).toBe(true);
+
+    expect(
+      isMissingInventoryMovementSnapshotColumnError({
+        code: 'PGRST204',
+        message: "Could not find the 'name' column of 'inventory_items' in the schema cache",
+      })
+    ).toBe(false);
   });
 });

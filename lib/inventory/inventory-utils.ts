@@ -49,6 +49,28 @@ export type InventoryStatusMessage = {
   text: string;
 };
 
+export function isMissingInventoryMovementSnapshotColumnError(error: unknown) {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+      ? error.code
+      : '';
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ? error.message
+        : '';
+
+  const isInventoryMovementSnapshotColumn =
+    message.includes('inventory_movements') &&
+    (message.includes('item_name') || message.includes('item_sku'));
+
+  return (code === 'PGRST204' || code === '42703') && isInventoryMovementSnapshotColumn;
+}
+
 function normalizeText(value: string | undefined) {
   const normalized = value?.trim() ?? '';
   return normalized.length > 0 ? normalized : null;

@@ -6,6 +6,7 @@ import { redirect } from 'next/navigation';
 import { staffPrivilegedRoles } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
 import {
+  isMissingInventoryMovementSnapshotColumnError,
   normalizeInventoryItemInput,
   normalizeInventoryMovementInput,
 } from '@/lib/inventory/inventory-utils';
@@ -29,6 +30,15 @@ export type InventoryActionState = {
   submittedAt: number | null;
 };
 
+type InventoryMovementPayload = {
+  item_id: string | null;
+  item_name?: string;
+  item_sku?: string;
+  type: 'in' | 'out' | 'delete';
+  quantity: number;
+  operator_name: string;
+};
+
 async function getInventoryActionContext() {
   const session = await getSession();
 
@@ -47,6 +57,30 @@ async function getInventoryActionContext() {
     role: session.role,
     operatorName: session.displayName || session.email || 'Camp user',
   };
+}
+
+async function insertInventoryMovement(
+  supabase: NonNullable<ReturnType<typeof createSupabaseAdminClient>>,
+  payload: InventoryMovementPayload
+) {
+  const { error } = await supabase.from('inventory_movements').insert(payload);
+
+  if (!error) {
+    return;
+  }
+
+  if (!isMissingInventoryMovementSnapshotColumnError(error)) {
+    throw error;
+  }
+
+  const { item_name: _itemName, item_sku: _itemSku, ...compatiblePayload } = payload;
+  const { error: compatibleError } = await supabase
+    .from('inventory_movements')
+    .insert(compatiblePayload);
+
+  if (compatibleError) {
+    throw compatibleError;
+  }
 }
 
 function redirectToInventory(status: InventoryStatus) {
@@ -130,7 +164,7 @@ export async function createInventoryItem(
       throw stockError;
     }
 
-    const { error: movementError } = await supabase.from('inventory_movements').insert({
+    await insertInventoryMovement(supabase, {
       item_id: createdItem.id,
       item_name: input.name,
       item_sku: input.sku,
@@ -138,10 +172,6 @@ export async function createInventoryItem(
       quantity: 1,
       operator_name: operatorName,
     });
-
-    if (movementError) {
-      throw movementError;
-    }
 
     revalidatePath('/inventory');
     revalidatePath('/inventory/history');
@@ -207,7 +237,7 @@ export async function deleteInventoryItem(
       throw error;
     }
 
-    const { error: movementError } = await supabase.from('inventory_movements').insert({
+    await insertInventoryMovement(supabase, {
       item_id: null,
       item_name: item.name,
       item_sku: item.sku,
@@ -215,10 +245,6 @@ export async function deleteInventoryItem(
       quantity: stockRow?.quantity ?? 0,
       operator_name: operatorName,
     });
-
-    if (movementError) {
-      throw movementError;
-    }
 
     revalidatePath('/inventory');
     revalidatePath('/inventory/history');
@@ -330,7 +356,7 @@ export async function applyInventoryMovement(
       throw stockUpdateError;
     }
 
-    const { error: movementError } = await supabase.from('inventory_movements').insert({
+    await insertInventoryMovement(supabase, {
       item_id: input.itemId,
       item_name: item.name,
       item_sku: item.sku,
@@ -338,10 +364,6 @@ export async function applyInventoryMovement(
       quantity: input.quantity,
       operator_name: operatorName,
     });
-
-    if (movementError) {
-      throw movementError;
-    }
 
     revalidatePath('/inventory');
     revalidatePath('/inventory/history');
