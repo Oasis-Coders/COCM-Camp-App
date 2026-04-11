@@ -34,7 +34,7 @@ jobs:
         run: supabase db lint --workdir supabase || echo "::warning::Supabase local lint skipped because no local database is running"
 
       - name: Dry-run migration generation check
-        run: supabase db diff --workdir supabase --schema public || true
+        run: timeout 30s supabase db diff --workdir supabase --schema public || echo "::warning::Supabase local diff skipped because no local database is running"
 
   deploy:
     if: github.ref == 'refs/heads/main'
