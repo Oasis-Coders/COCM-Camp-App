@@ -31,10 +31,10 @@ jobs:
           version: latest
 
       - name: Lint local schema
-        run: supabase db lint --config supabase/config.toml
+        run: supabase db lint --workdir supabase
 
       - name: Dry-run migration generation check
-        run: supabase db diff --config supabase/config.toml --schema public || true
+        run: supabase db diff --workdir supabase --schema public || true
 
   deploy:
     if: github.ref == 'refs/heads/main'
