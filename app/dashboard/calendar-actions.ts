@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache';
 
+import { logServerError } from '@/lib/observability/logger';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export type CreateCalendarEventInput = {
@@ -37,6 +38,37 @@ function normalizeCalendarEventInput(input: CreateCalendarEventInput) {
     startsAt: startsAt.toISOString(),
     endsAt: endsAt.toISOString(),
   };
+}
+
+function getCalendarEventErrorMessage(error: unknown) {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+      ? error.code
+      : '';
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ? error.message
+        : '';
+  const normalizedMessage = message.toLowerCase();
+
+  if (code === '42P01' || normalizedMessage.includes('personal_calendar_events')) {
+    return 'Calendar storage is not ready yet. The Supabase migration needs to run.';
+  }
+
+  if (code === '42501' || normalizedMessage.includes('permission denied')) {
+    return 'Calendar storage permissions are not ready yet. The Supabase grants need to run.';
+  }
+
+  if (message) {
+    return message;
+  }
+
+  return 'The calendar event could not be created.';
 }
 
 export async function createPersonalCalendarEvent(
@@ -86,9 +118,19 @@ export async function createPersonalCalendarEvent(
       message: 'Event added to your calendar.',
     };
   } catch (error) {
+    logServerError({
+      scope: 'dashboard.create_calendar_event',
+      message: 'Error creating personal calendar event',
+      error,
+      context: {
+        startsAt: input.startsAt,
+        endsAt: input.endsAt,
+      },
+    });
+
     return {
       status: 'error',
-      message: error instanceof Error ? error.message : 'The calendar event could not be created.',
+      message: getCalendarEventErrorMessage(error),
     };
   }
 }
