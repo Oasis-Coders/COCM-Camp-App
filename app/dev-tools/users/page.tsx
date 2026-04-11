@@ -105,32 +105,37 @@ async function changeUserRole(formData: FormData) {
     .maybeSingle<{ id: string }>();
 
   if (profile?.id) {
-    const { data: roleRecord, error: roleError } = await supabase
-      .from('roles')
-      .select('id')
-      .eq('name', targetRole)
-      .single<{ id: string }>();
+    try {
+      const { data: roleRecord, error: roleError } = await supabase
+        .from('roles')
+        .select('id')
+        .eq('name', targetRole)
+        .single<{ id: string }>();
 
-    if (roleError || !roleRecord) {
-      redirect('/dev-tools/users?directory=role-error');
-    }
+      if (roleError || !roleRecord) {
+        throw roleError ?? new Error('Role record unavailable');
+      }
 
-    const { error: deleteRolesError } = await supabase
-      .from('user_roles')
-      .delete()
-      .eq('user_id', profile.id);
+      const { error: deleteRolesError } = await supabase
+        .from('user_roles')
+        .delete()
+        .eq('user_id', profile.id);
 
-    if (deleteRolesError) {
-      redirect('/dev-tools/users?directory=role-error');
-    }
+      if (deleteRolesError) {
+        throw deleteRolesError;
+      }
 
-    const { error: insertRoleError } = await supabase.from('user_roles').insert({
-      user_id: profile.id,
-      role_id: roleRecord.id,
-    });
+      const { error: insertRoleError } = await supabase.from('user_roles').insert({
+        user_id: profile.id,
+        role_id: roleRecord.id,
+      });
 
-    if (insertRoleError) {
-      redirect('/dev-tools/users?directory=role-error');
+      if (insertRoleError) {
+        throw insertRoleError;
+      }
+    } catch {
+      // Auth metadata is the source of truth for app permissions. Some environments do not seed
+      // the legacy profile role tables, so this linkage sync is intentionally best effort.
     }
   }
 
