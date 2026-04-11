@@ -29,6 +29,8 @@ export async function createSupabaseServerClient() {
               cookieStore.set(name, value, options);
             });
           } catch {
+            // Server Components can read session cookies but cannot refresh them.
+            // Middleware already refreshes Supabase auth cookies before render.
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
             // user sessions.
