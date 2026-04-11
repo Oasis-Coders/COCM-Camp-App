@@ -89,6 +89,7 @@ test.describe.serial('account e2e', () => {
       .locator('xpath=ancestor::tr[1]');
     await expect(currentUserRow).toBeVisible();
     await currentUserRow.getByLabel('Change role').selectOption('admin');
+    await expect(currentUserRow.getByLabel('Change role')).toHaveValue('admin');
     await expect(page).toHaveURL(/\/dev-tools\/users$/);
     await currentUserRow.getByRole('button', { name: 'Save' }).click();
 
@@ -98,6 +99,7 @@ test.describe.serial('account e2e', () => {
       )
     ).toBeVisible();
     await expect(page).toHaveURL(/\/dev-tools\/users$/);
+    await expect(currentUserRow.getByLabel('Change role')).toHaveValue('admin');
     await expect(page.getByText('The role change could not be completed.')).toHaveCount(0);
 
     await page.goto('/profile');

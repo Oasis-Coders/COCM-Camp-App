@@ -26,7 +26,7 @@ export type DirectoryEntry = {
   profileId?: string;
   email: string;
   displayName: string;
-  role: string;
+  role: AppRole;
   profileStatus: 'linked' | 'missing';
   createdAt?: string | null;
   lastSignInAt?: string | null;
@@ -70,7 +70,7 @@ export function buildDirectoryEntries(input: {
       }),
       role: normalizeRole(
         asOptionalString(user.app_metadata?.role) ?? asOptionalString(user.user_metadata?.role)
-      ).replace('_', ' '),
+      ),
       profileStatus: profile ? ('linked' as const) : ('missing' as const),
       createdAt: user.created_at ?? null,
       lastSignInAt: user.last_sign_in_at ?? null,

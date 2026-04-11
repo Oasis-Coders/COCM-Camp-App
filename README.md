@@ -27,7 +27,7 @@ The long-term product direction includes:
 
 ## Current phase
 
-We are currently entering Phase 2 (Tasks and check-in). Foundation and access layers are in place, and core task management is now fully operational.
+We are in Phase 2 (Tasks and check-in). The core operations foundation is now in place: auth, roles, events, registrations, inventory, tasks, admin/dev tooling, and CI-backed automated tests. The next product milestone is check-in.
 
 Completed so far:
 
@@ -36,13 +36,15 @@ Completed so far:
 - ✅ Database foundation with RLS and role-based permissions
 - ✅ Event browsing, registration, and admin management
 - ✅ Inventory tracking
+- ✅ Dev Tools user administration for account lookup, role changes, password resets, and test support
 - ✅ Task management — create, assign, reprioritize, transition, and close tasks (admin/staff)
+- ✅ Unit and e2e testing with isolated test data
 - ✅ CI/CD and deployment to Vercel
 
 Current priority:
 
 - Check-in workflows (code generation, manual and guided flows)
-- Remaining staff/admin operational controls
+- Smoothing remaining staff/admin operational controls
 
 ## Delivery roadmap
 
@@ -87,6 +89,9 @@ This phase adds the operational tools the team will use during real events:
 - ✅ Task reprioritization — low / medium / high / urgent
 - ✅ Status transitions — validated state machine with DB constraints and app-level guards
 - ✅ Admin & staff task management UI — list view with filters, detail view with inline editing
+- ✅ Inventory operations — add, remove, and audit stock actions with e2e coverage
+- ✅ Account operations — sign-up, profile landing, and role-change e2e coverage
+- ✅ Dev Tools user directory — admin account lookup, role changes, password reset, and removal support
 - Check-in code generation
 - Manual and guided check-in flows
 - Staff and admin operational controls (remaining items)
@@ -136,6 +141,19 @@ Useful contribution areas:
 
 When contributing, it helps to anchor work to one of the current phases so the repo keeps moving forward as a team instead of scattering into unrelated experiments.
 
+## Development and testing
+
+Common local commands:
+
+- `pnpm lint` — run ESLint and Prettier checks
+- `pnpm typecheck` — run TypeScript checks
+- `pnpm test` — run unit tests with Vitest
+- `pnpm test:e2e` — run Playwright browser tests
+
+E2E tests are intentionally isolated from production data. Local and CI browser tests use `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, and `E2E_SUPABASE_SERVICE_ROLE_KEY`; when those values are absent, Playwright skips the data-backed e2e suite rather than falling back to production Supabase credentials. See `docs/environment-strategy.md` for the current production/test environment setup.
+
+Role and permission changes should prefer client state updates and inline feedback over redirect-based status messages, especially in Dev Tools flows where the saved selection needs to stay visually in sync with the persisted role.
+
 ## Team working style
 
 We want the repo to feel collaborative, steady, and easy to join.
@@ -158,4 +176,4 @@ This project is on track when:
 
 ## Project snapshot
 
-We are building a camp and event operations app in phases. The foundation (auth, permissions, events, inventory) is complete. Task management for admins and staff is now fully operational — including create, assign, reprioritize, status transitions, and close. The next milestone is check-in workflows.
+We are building a camp and event operations app in phases. The foundation (auth, permissions, events, registrations, inventory, tasks, admin/dev account tooling, CI, and isolated e2e testing) is complete enough to support real workflow hardening. The next milestone is check-in workflows.

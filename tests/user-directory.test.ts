@@ -72,7 +72,7 @@ describe('user directory', () => {
     ]);
   });
 
-  it('falls back to auth metadata for display name and formats super admin roles for the table', () => {
+  it('falls back to auth metadata for display name and keeps canonical role values', () => {
     expect(
       buildDirectoryEntries({
         authUsers: [
@@ -91,7 +91,7 @@ describe('user directory', () => {
         profileId: undefined,
         email: 'leader@example.com',
         displayName: 'Camp Lead',
-        role: 'super admin',
+        role: 'super_admin',
         profileStatus: 'missing',
         createdAt: null,
         lastSignInAt: null,
