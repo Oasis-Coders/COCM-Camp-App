@@ -109,7 +109,6 @@ function emitLog(entry: LogEntry) {
   const payload = JSON.stringify(entry);
 
   if (entry.level === 'error') {
-    // eslint-disable-next-line no-console
     console.error(payload);
     return;
   }

@@ -18,7 +18,7 @@ export default async function DashboardPage() {
   const { count: activeTaskCount } = await supabase
     .from('tasks')
     .select('*', { count: 'exact', head: true })
-    .in('status', ['open', 'in_progress', 'blocked']) ?? { count: 0 });
+    .in('status', ['open', 'in_progress', 'blocked']);
 
   const { count: checkinCount } = await supabase
     .from('checkins')

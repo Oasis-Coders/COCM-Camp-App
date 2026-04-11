@@ -5,3 +5,5 @@ dist
 public
 coverage
 *.log
+pnpm-lock.yaml
+docs/
