@@ -31,26 +31,13 @@ function SubmitButton({ label, tone }: { label: string; tone: 'primary' | 'secon
       disabled={pending}
       aria-label={pending ? 'Saving inventory movement' : label}
       title={pending ? 'Saving inventory movement' : label}
-      className={`inline-flex size-10 items-center justify-center rounded-full transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70 ${
+      className={`inline-flex h-10 min-w-24 items-center justify-center rounded-full px-4 text-sm font-semibold transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70 ${
         isPrimary
           ? 'bg-camp-forest text-white hover:bg-camp-forest/90'
           : 'bg-camp-sand/65 text-camp-forest hover:bg-camp-sand'
       }`}
     >
-      <svg
-        aria-hidden="true"
-        className="size-4"
-        fill="none"
-        stroke="currentColor"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth="2"
-        viewBox="0 0 24 24"
-      >
-        {isPrimary ? <path d="M12 5v14" /> : null}
-        <path d="M5 12h14" />
-      </svg>
-      <span className="sr-only">{pending ? 'Saving inventory movement' : label}</span>
+      {pending ? 'Saving...' : label}
     </button>
   );
 }

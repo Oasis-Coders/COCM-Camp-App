@@ -1,64 +1,222 @@
-import Link from 'next/link';
 import { AppShell } from '@/components/layout/app-shell';
 import { MetricCard } from '@/components/layout/metric-card';
+import { staffPrivilegedRoles } from '@/lib/app-config';
+import { getSession } from '@/lib/auth/session';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-export default async function DashboardPage() {
+import { DashboardCalendar, type CalendarItem, type CalendarProfile } from './dashboard-calendar';
+
+type DashboardPageProps = {
+  searchParams: Promise<{
+    week?: string;
+    profile?: string;
+  }>;
+};
+
+type ProfileRow = {
+  id: string;
+  display_name: string | null;
+  email: string | null;
+};
+
+type RegistrationRow = {
+  id: string;
+  status: string | null;
+  events:
+    | {
+        id: string;
+        title: string;
+        slug: string;
+        location: string | null;
+        starts_at: string;
+        ends_at: string;
+      }
+    | {
+        id: string;
+        title: string;
+        slug: string;
+        location: string | null;
+        starts_at: string;
+        ends_at: string;
+      }[]
+    | null;
+};
+
+type PersonalEventRow = {
+  id: string;
+  title: string;
+  starts_at: string;
+  ends_at: string;
+};
+
+function getWeekStart(input?: string) {
+  const candidate = input ? new Date(`${input}T00:00:00`) : new Date();
+  const date = Number.isNaN(candidate.getTime()) ? new Date() : candidate;
+  const weekStart = new Date(date);
+  const day = weekStart.getDay();
+  const diff = day === 0 ? -6 : 1 - day;
+  weekStart.setDate(weekStart.getDate() + diff);
+  weekStart.setHours(0, 0, 0, 0);
+  return weekStart;
+}
+
+function addDays(date: Date, days: number) {
+  const next = new Date(date);
+  next.setDate(next.getDate() + days);
+  return next;
+}
+
+function toDateInputValue(date: Date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function mapProfile(row: ProfileRow): CalendarProfile {
+  return {
+    id: row.id,
+    displayName: row.display_name ?? row.email?.split('@')[0] ?? 'Camp user',
+    email: row.email ?? 'unknown@example.com',
+  };
+}
+
+function getJoinedEvent(row: RegistrationRow) {
+  return Array.isArray(row.events) ? row.events[0] : row.events;
+}
+
+export default async function DashboardPage({ searchParams }: DashboardPageProps) {
+  const params = await searchParams;
+  const session = await getSession();
   const supabase = await createSupabaseServerClient();
-  if (!supabase) return null;
+
+  if (!supabase) {
+    return (
+      <AppShell title="Dashboard" eyebrow="Protected route">
+        <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 text-sm text-slate-600 shadow-panel">
+          Connect Supabase to use the dashboard calendar.
+        </div>
+      </AppShell>
+    );
+  }
 
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
-  const { count: eventCount } = await supabase
-    .from('events')
-    .select('*', { count: 'exact', head: true });
+  const [{ count: eventCount }, { count: activeTaskCount }, { count: checkinCount }] =
+    await Promise.all([
+      supabase.from('events').select('*', { count: 'exact', head: true }),
+      supabase
+        .from('tasks')
+        .select('*', { count: 'exact', head: true })
+        .in('status', ['open', 'in_progress', 'blocked']),
+      supabase.from('checkins').select('*', { count: 'exact', head: true }),
+    ]);
 
-  const { count: activeTaskCount } = await supabase
-    .from('tasks')
-    .select('*', { count: 'exact', head: true })
-    .in('status', ['open', 'in_progress', 'blocked']);
+  let currentProfile: ProfileRow | null = null;
 
-  const { count: checkinCount } = await supabase
-    .from('checkins')
-    .select('*', { count: 'exact', head: true });
-
-  // Get user profile if authenticated
-  let registrations = null;
   if (user) {
-    const { data: profile } = await supabase
+    const { data } = await supabase
       .from('profiles')
-      .select('id')
+      .select('id, display_name, email')
       .eq('auth_user_id', user.id)
       .single();
+    currentProfile = data;
+  }
 
-    if (profile) {
-      const { data } = await supabase
+  const weekStart = getWeekStart(params.week);
+  const weekEnd = addDays(weekStart, 7);
+  const canInspectOthers = staffPrivilegedRoles.includes(session.role);
+  const adminSupabase = canInspectOthers ? createSupabaseAdminClient() : null;
+  const readClient = adminSupabase ?? supabase;
+  const { data: profileRows } = await readClient
+    .from('profiles')
+    .select('id, display_name, email')
+    .order('display_name', { ascending: true });
+  const profiles = (profileRows ?? []).map(mapProfile);
+  const profileIds = new Set(profiles.map((profile) => profile.id));
+  const selectedProfileId =
+    params.profile &&
+    profileIds.has(params.profile) &&
+    (canInspectOthers || params.profile === currentProfile?.id)
+      ? params.profile
+      : currentProfile?.id;
+
+  let calendarItems: CalendarItem[] = [];
+
+  if (selectedProfileId) {
+    const [registrationsResult, personalEventsResult] = await Promise.all([
+      readClient
         .from('event_registrations')
         .select(
           `
+          id,
           status,
-          registered_at,
-          events (
+          events!inner (
             id,
             title,
             slug,
             location,
-            starts_at
+            starts_at,
+            ends_at
           )
         `
         )
-        .eq('user_id', profile.id)
-        .order('registered_at', { ascending: false });
+        .eq('user_id', selectedProfileId)
+        .neq('status', 'cancelled')
+        .gte('events.starts_at', weekStart.toISOString())
+        .lt('events.starts_at', weekEnd.toISOString()),
+      readClient
+        .from('personal_calendar_events')
+        .select('id, title, starts_at, ends_at')
+        .eq('owner_profile_id', selectedProfileId)
+        .lt('starts_at', weekEnd.toISOString())
+        .gt('ends_at', weekStart.toISOString()),
+    ]);
 
-      registrations = data;
-    }
+    const registrationItems: CalendarItem[] = (
+      (registrationsResult.data ?? []) as RegistrationRow[]
+    ).flatMap((registration) => {
+      const event = getJoinedEvent(registration);
+
+      if (!event) {
+        return [];
+      }
+
+      return [
+        {
+          id: `registration-${registration.id}`,
+          title: event.title,
+          location: event.location,
+          startsAt: event.starts_at,
+          endsAt: event.ends_at,
+          kind: 'event' as const,
+          status: registration.status,
+          href: `/events/${event.slug}`,
+        },
+      ];
+    });
+
+    const personalItems = ((personalEventsResult.data ?? []) as PersonalEventRow[]).map(
+      (event) => ({
+        id: `personal-${event.id}`,
+        title: event.title,
+        startsAt: event.starts_at,
+        endsAt: event.ends_at,
+        kind: 'personal' as const,
+      })
+    );
+
+    calendarItems = [...registrationItems, ...personalItems].sort(
+      (first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime()
+    );
   }
 
   return (
     <AppShell title="Dashboard" eyebrow="Protected route">
-      <div className="mb-10 grid gap-5 md:grid-cols-3">
+      <div className="mb-6 grid gap-5 md:grid-cols-3">
         <MetricCard
           label="Open events"
           value={String(eventCount ?? 0)}
@@ -76,49 +234,18 @@ export default async function DashboardPage() {
         />
       </div>
 
-      {user && (
-        <section>
-          <h2 className="mb-4 font-serif text-xl text-camp-forest">My Registrations</h2>
-          <div className="grid gap-4">
-            {(registrations || []).length === 0 ? (
-              <p className="text-sm text-slate-500">
-                You haven&apos;t registered for any events yet.
-              </p>
-            ) : (
-              (registrations || []).map((reg: any, i: number) => (
-                <Link
-                  key={i}
-                  href={`/events/${reg.events.slug}`}
-                  className="block rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel transition hover:border-camp-forest/25"
-                >
-                  <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <h3 className="font-serif text-xl text-camp-forest">{reg.events.title}</h3>
-                      <p className="mt-1 text-sm text-slate-600">{reg.events.location}</p>
-                    </div>
-                    <div className="text-sm text-slate-600 md:text-right">
-                      <p>
-                        Status:{' '}
-                        <span
-                          className={`font-semibold capitalize ${
-                            reg.status === 'waitlisted'
-                              ? 'text-amber-600'
-                              : reg.status === 'registered'
-                                ? 'text-green-600'
-                                : 'text-slate-500'
-                          }`}
-                        >
-                          {reg.status}
-                        </span>
-                      </p>
-                      <p>Starts: {new Date(reg.events.starts_at).toLocaleString()}</p>
-                    </div>
-                  </div>
-                </Link>
-              ))
-            )}
-          </div>
-        </section>
+      {currentProfile && selectedProfileId ? (
+        <DashboardCalendar
+          currentProfileId={currentProfile.id}
+          selectedProfileId={selectedProfileId}
+          profiles={profiles.length > 0 ? profiles : [mapProfile(currentProfile)]}
+          items={calendarItems}
+          weekStart={toDateInputValue(weekStart)}
+        />
+      ) : (
+        <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 text-sm text-slate-600 shadow-panel">
+          Your profile needs to finish syncing before the dashboard calendar can load.
+        </div>
       )}
     </AppShell>
   );
