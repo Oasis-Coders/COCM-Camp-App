@@ -61,6 +61,16 @@ function toDateInputValue(date: Date) {
   return `${year}-${month}-${day}`;
 }
 
+function toTimeInputValue(date: Date) {
+  const hours = String(date.getHours()).padStart(2, '0');
+  const minutes = String(date.getMinutes()).padStart(2, '0');
+  return `${hours}:${minutes}`;
+}
+
+function buildLocalDateTime(dateValue: string, timeValue: string) {
+  return new Date(`${dateValue}T${timeValue}:00`);
+}
+
 function slotToDate(weekStart: Date, dayIndex: number, slotIndex: number) {
   const date = addDays(weekStart, dayIndex);
   date.setHours(startHour, slotIndex * slotMinutes, 0, 0);
@@ -192,6 +202,42 @@ export function DashboardCalendar({
     });
   }
 
+  function updateDraftDate(value: string) {
+    if (!draftEvent) {
+      return;
+    }
+
+    setDraftEvent({
+      startsAt: buildLocalDateTime(value, toTimeInputValue(draftEvent.startsAt)),
+      endsAt: buildLocalDateTime(value, toTimeInputValue(draftEvent.endsAt)),
+    });
+  }
+
+  function updateDraftStartTime(value: string) {
+    if (!draftEvent) {
+      return;
+    }
+
+    const startsAt = buildLocalDateTime(toDateInputValue(draftEvent.startsAt), value);
+    const endsAt =
+      draftEvent.endsAt > startsAt
+        ? draftEvent.endsAt
+        : new Date(startsAt.getTime() + slotMinutes * 60_000);
+
+    setDraftEvent({ startsAt, endsAt });
+  }
+
+  function updateDraftEndTime(value: string) {
+    if (!draftEvent) {
+      return;
+    }
+
+    setDraftEvent({
+      startsAt: draftEvent.startsAt,
+      endsAt: buildLocalDateTime(toDateInputValue(draftEvent.startsAt), value),
+    });
+  }
+
   return (
     <section className="rounded-[32px] border border-camp-forest/10 bg-white/90 p-5 shadow-panel backdrop-blur">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
@@ -246,45 +292,6 @@ export function DashboardCalendar({
         <p className="mt-4 rounded-2xl border border-camp-forest/10 bg-camp-sky/55 px-4 py-3 text-sm text-camp-forest">
           {message}
         </p>
-      ) : null}
-
-      {draftEvent ? (
-        <form
-          action={createDraftEvent}
-          className="mt-4 rounded-[24px] border border-camp-forest/10 bg-camp-sky/35 p-4 shadow-sm"
-        >
-          <div className="grid gap-4 lg:grid-cols-[1fr_auto] lg:items-end">
-            <label className="text-sm font-semibold text-camp-forest">
-              Event title
-              <input
-                value={draftTitle}
-                onChange={(event) => setDraftTitle(event.target.value)}
-                className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
-              />
-            </label>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <p className="rounded-2xl bg-white/75 px-4 py-3 text-sm text-camp-forest">
-                {dateFormatter.format(draftEvent.startsAt)} ·{' '}
-                {timeFormatter.format(draftEvent.startsAt)}–
-                {timeFormatter.format(draftEvent.endsAt)}
-              </p>
-              <button
-                type="submit"
-                disabled={pending}
-                className="rounded-2xl bg-camp-forest px-5 py-3 text-sm font-semibold text-white transition hover:bg-camp-moss disabled:cursor-wait disabled:opacity-70"
-              >
-                {pending ? 'Creating...' : 'Create event'}
-              </button>
-              <button
-                type="button"
-                onClick={() => setDraftEvent(null)}
-                className="rounded-2xl border border-camp-forest/10 bg-white px-5 py-3 text-sm font-semibold text-camp-forest transition hover:bg-camp-sand/40"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </form>
       ) : null}
 
       <div className="mt-6 overflow-x-auto rounded-[28px] border border-camp-forest/10 bg-camp-sand/20">
@@ -418,6 +425,120 @@ export function DashboardCalendar({
       {items.length === 0 ? (
         <div className="mt-5 rounded-[24px] border border-dashed border-camp-forest/20 bg-camp-sand/25 p-5 text-sm text-slate-600">
           No events are scheduled in this week. Use the calendar grid to create one for yourself.
+        </div>
+      ) : null}
+
+      {draftEvent ? (
+        <div
+          className="fixed inset-0 z-50 grid place-items-center bg-camp-forest/35 px-4 py-8 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="calendar-event-modal-title"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !pending) {
+              setDraftEvent(null);
+            }
+          }}
+        >
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              createDraftEvent();
+            }}
+            className="w-full max-w-xl rounded-[32px] border border-camp-forest/10 bg-white p-6 shadow-panel"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs uppercase tracking-[0.28em] text-camp-moss">New event</p>
+                <h3
+                  id="calendar-event-modal-title"
+                  className="mt-2 font-serif text-3xl text-camp-forest"
+                >
+                  Create calendar event
+                </h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  Fine-tune the title, date, and time before adding it to your calendar.
+                </p>
+              </div>
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setDraftEvent(null)}
+                className="rounded-full border border-camp-forest/10 px-3 py-1 text-sm font-semibold text-camp-forest transition hover:bg-camp-sand/40 disabled:cursor-wait disabled:opacity-70"
+                aria-label="Close event modal"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="mt-6 grid gap-4">
+              <label className="text-sm font-semibold text-camp-forest">
+                Title
+                <input
+                  value={draftTitle}
+                  onChange={(event) => setDraftTitle(event.target.value)}
+                  autoFocus
+                  className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
+                />
+              </label>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <label className="text-sm font-semibold text-camp-forest">
+                  Date
+                  <input
+                    type="date"
+                    value={toDateInputValue(draftEvent.startsAt)}
+                    onChange={(event) => updateDraftDate(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-camp-forest">
+                  Start
+                  <input
+                    type="time"
+                    step={slotMinutes * 60}
+                    value={toTimeInputValue(draftEvent.startsAt)}
+                    onChange={(event) => updateDraftStartTime(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
+                  />
+                </label>
+                <label className="text-sm font-semibold text-camp-forest">
+                  End
+                  <input
+                    type="time"
+                    step={slotMinutes * 60}
+                    value={toTimeInputValue(draftEvent.endsAt)}
+                    onChange={(event) => updateDraftEndTime(event.target.value)}
+                    className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
+                  />
+                </label>
+              </div>
+
+              <p className="rounded-2xl bg-camp-sky/55 px-4 py-3 text-sm text-camp-forest">
+                {dateFormatter.format(draftEvent.startsAt)} ·{' '}
+                {timeFormatter.format(draftEvent.startsAt)}–
+                {timeFormatter.format(draftEvent.endsAt)}
+              </p>
+            </div>
+
+            <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => setDraftEvent(null)}
+                className="rounded-2xl border border-camp-forest/10 bg-white px-5 py-3 text-sm font-semibold text-camp-forest transition hover:bg-camp-sand/40 disabled:cursor-wait disabled:opacity-70"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={pending}
+                className="rounded-2xl bg-camp-forest px-5 py-3 text-sm font-semibold text-white transition hover:bg-camp-moss disabled:cursor-wait disabled:opacity-70"
+              >
+                {pending ? 'Creating...' : 'Create event'}
+              </button>
+            </div>
+          </form>
         </div>
       ) : null}
     </section>
