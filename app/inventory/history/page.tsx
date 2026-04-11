@@ -11,6 +11,8 @@ import {
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
+import { ClearHistoryButton } from './clear-history-button';
+
 type InventoryHistoryBundle = {
   enabled: boolean;
   errors: string[];
@@ -34,7 +36,7 @@ async function loadInventoryHistory(): Promise<InventoryHistoryBundle> {
     supabase.from('inventory_items').select('id, name, sku'),
     supabase
       .from('inventory_movements')
-      .select('id, item_id, type, quantity, operator_name, time')
+      .select('id, item_id, item_name, item_sku, type, quantity, operator_name, time')
       .order('time', { ascending: false }),
   ]);
 
@@ -58,6 +60,26 @@ function formatDateTime(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(new Date(value));
+}
+
+function movementClasses(type: string) {
+  if (type === 'in') {
+    return 'bg-emerald-100 text-emerald-900';
+  }
+
+  if (type === 'delete') {
+    return 'bg-camp-sand/70 text-camp-forest';
+  }
+
+  return 'bg-amber-100 text-amber-900';
+}
+
+function movementLabel(type: string) {
+  if (type === 'delete') {
+    return 'deleted';
+  }
+
+  return type;
 }
 
 export default async function InventoryHistoryPage() {
@@ -108,12 +130,15 @@ export default async function InventoryHistoryPage() {
                     Every inbound and outbound movement records the operator and time automatically.
                   </p>
                 </div>
-                <Link
-                  href="/inventory"
-                  className="inline-flex items-center justify-center rounded-full border border-camp-forest/15 px-4 py-2.5 text-sm font-semibold text-camp-forest transition hover:bg-camp-sand/35"
-                >
-                  Back to inventory
-                </Link>
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                  {session.role === 'super_admin' ? <ClearHistoryButton /> : null}
+                  <Link
+                    href="/inventory"
+                    className="inline-flex items-center justify-center rounded-full border border-camp-forest/15 px-4 py-2.5 text-sm font-semibold text-camp-forest transition hover:bg-camp-sand/35"
+                  >
+                    Back to inventory
+                  </Link>
+                </div>
               </div>
 
               <div className="mt-5 grid gap-3">
@@ -123,7 +148,9 @@ export default async function InventoryHistoryPage() {
                   </div>
                 ) : (
                   history.movements.map((movement) => {
-                    const item = itemById.get(movement.item_id);
+                    const item = movement.item_id ? itemById.get(movement.item_id) : undefined;
+                    const itemName = item?.name ?? movement.item_name ?? 'Deleted item';
+                    const itemSku = item?.sku ?? movement.item_sku ?? 'DELETED';
 
                     return (
                       <article
@@ -133,24 +160,19 @@ export default async function InventoryHistoryPage() {
                         <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
-                              <p className="font-semibold text-camp-forest">
-                                {item?.name ?? 'Unknown item'}
-                              </p>
+                              <p className="font-semibold text-camp-forest">{itemName}</p>
                               <span className="rounded-full bg-camp-sky/60 px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-camp-forest">
-                                {item?.sku ?? 'UNKNOWN'}
+                                {itemSku}
                               </span>
                               <span
-                                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${
-                                  movement.type === 'in'
-                                    ? 'bg-emerald-100 text-emerald-900'
-                                    : 'bg-amber-100 text-amber-900'
-                                }`}
+                                className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${movementClasses(movement.type)}`}
                               >
-                                {movement.type}
+                                {movementLabel(movement.type)}
                               </span>
                             </div>
                             <p className="mt-2 text-sm text-slate-700">
-                              Quantity: {movement.quantity}
+                              {movement.type === 'delete' ? 'Stock at delete' : 'Quantity'}:{' '}
+                              {movement.quantity}
                             </p>
                             <p className="mt-1 text-sm text-slate-600">
                               Operator: {movement.operator_name}

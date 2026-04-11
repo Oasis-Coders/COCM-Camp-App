@@ -15,6 +15,7 @@ import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 export type InventoryStatus =
   | 'item-created'
   | 'item-deleted'
+  | 'history-cleared'
   | 'stock-in'
   | 'stock-out'
   | 'validation-error'
@@ -43,6 +44,7 @@ async function getInventoryActionContext() {
 
   return {
     supabase,
+    role: session.role,
     operatorName: session.displayName || session.email || 'Camp user',
   };
 }
@@ -130,6 +132,8 @@ export async function createInventoryItem(
 
     const { error: movementError } = await supabase.from('inventory_movements').insert({
       item_id: createdItem.id,
+      item_name: input.name,
+      item_sku: input.sku,
       type: 'in',
       quantity: 1,
       operator_name: operatorName,
@@ -175,12 +179,45 @@ export async function deleteInventoryItem(
       throw new Error('Item is required');
     }
 
-    const { supabase } = await getInventoryActionContext();
+    const { supabase, operatorName } = await getInventoryActionContext();
+
+    const { data: item, error: itemReadError } = await supabase
+      .from('inventory_items')
+      .select('name, sku')
+      .eq('id', itemId)
+      .single();
+
+    if (itemReadError) {
+      throw itemReadError;
+    }
+
+    const { data: stockRow, error: stockReadError } = await supabase
+      .from('inventory_stock')
+      .select('quantity')
+      .eq('item_id', itemId)
+      .maybeSingle();
+
+    if (stockReadError) {
+      throw stockReadError;
+    }
 
     const { error } = await supabase.from('inventory_items').delete().eq('id', itemId);
 
     if (error) {
       throw error;
+    }
+
+    const { error: movementError } = await supabase.from('inventory_movements').insert({
+      item_id: null,
+      item_name: item.name,
+      item_sku: item.sku,
+      type: 'delete',
+      quantity: stockRow?.quantity ?? 0,
+      operator_name: operatorName,
+    });
+
+    if (movementError) {
+      throw movementError;
     }
 
     revalidatePath('/inventory');
@@ -207,6 +244,43 @@ export async function deleteInventoryItem(
   }
 }
 
+export async function clearInventoryHistory(
+  _previousState: InventoryActionState,
+  _formData: FormData
+): Promise<InventoryActionState> {
+  try {
+    const { supabase, role } = await getInventoryActionContext();
+
+    if (role !== 'super_admin') {
+      throw new Error('Unauthorized');
+    }
+
+    const { error } = await supabase.from('inventory_movements').delete().not('id', 'is', null);
+
+    if (error) {
+      throw error;
+    }
+
+    revalidatePath('/inventory/history');
+
+    return {
+      status: 'history-cleared',
+      submittedAt: Date.now(),
+    };
+  } catch (error) {
+    logServerError({
+      scope: 'inventory.clear_history',
+      message: 'Error clearing inventory history',
+      error,
+    });
+
+    return {
+      status: mapInventoryError(error),
+      submittedAt: Date.now(),
+    };
+  }
+}
+
 export async function applyInventoryMovement(
   _previousState: InventoryActionState,
   formData: FormData
@@ -219,6 +293,16 @@ export async function applyInventoryMovement(
     });
 
     const { supabase, operatorName } = await getInventoryActionContext();
+
+    const { data: item, error: itemReadError } = await supabase
+      .from('inventory_items')
+      .select('name, sku')
+      .eq('id', input.itemId)
+      .single();
+
+    if (itemReadError) {
+      throw itemReadError;
+    }
 
     const { data: stockRow, error: stockReadError } = await supabase
       .from('inventory_stock')
@@ -248,6 +332,8 @@ export async function applyInventoryMovement(
 
     const { error: movementError } = await supabase.from('inventory_movements').insert({
       item_id: input.itemId,
+      item_name: item.name,
+      item_sku: item.sku,
       type: input.type,
       quantity: input.quantity,
       operator_name: operatorName,

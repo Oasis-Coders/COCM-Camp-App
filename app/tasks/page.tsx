@@ -1,37 +1,36 @@
 import { AppShell } from '@/components/layout/app-shell';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { TaskList, type TaskWithProfile } from './task-list';
+import { getSession } from '@/lib/auth/session';
+import {
+  fetchTasks,
+  getCurrentUserProfileId,
+  fetchEventOptions,
+  fetchProfileOptions,
+} from '@/lib/tasks/task-queries';
+import { TaskList } from './task-list';
 
 export default async function TasksPage() {
-  const supabase = await createSupabaseServerClient();
+  const session = await getSession();
+  const isStaff = ['super_admin', 'admin', 'staff'].includes(session.role);
 
-  const { data: authData } = (await supabase?.auth.getUser()) ?? { data: { user: null } };
-  const userId = authData.user?.id;
+  const [tasks, currentProfileId] = await Promise.all([fetchTasks(), getCurrentUserProfileId()]);
 
-  const { data: rawTasks } = await (supabase
-    ?.from('tasks')
-    .select(
-      `
-      id,
-      title,
-      description,
-      status,
-      priority,
-      due_at,
-      assigned_to:profiles!tasks_assigned_to_fkey(
-        display_name,
-        first_name,
-        last_name
-      )
-    `
-    )
-    .order('created_at', { ascending: false }) ?? { data: [] });
+  // Only load picker data for staff (needed by create form)
+  let events: { id: string; title: string }[] = [];
+  let staffProfiles: { id: string; display_name: string | null }[] = [];
 
-  const tasks = (rawTasks as unknown as TaskWithProfile[]) || [];
+  if (isStaff) {
+    [events, staffProfiles] = await Promise.all([fetchEventOptions(), fetchProfileOptions()]);
+  }
 
   return (
-    <AppShell title="Tasks" eyebrow="Authenticated area">
-      <TaskList tasks={tasks} currentUserId={userId} />
+    <AppShell title="Tasks" eyebrow={isStaff ? 'Staff operations' : 'Your assignments'}>
+      <TaskList
+        tasks={tasks}
+        currentProfileId={currentProfileId}
+        isStaff={isStaff}
+        events={events}
+        staffProfiles={staffProfiles}
+      />
     </AppShell>
   );
 }

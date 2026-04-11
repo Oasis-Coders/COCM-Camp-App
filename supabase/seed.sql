@@ -68,7 +68,11 @@ on conflict (event_id, user_id) do nothing;
 insert into public.tasks (title, description, status, priority, event_id, assigned_to, created_by, due_at)
 values
   ('Finalize counselor roster', 'Confirm final staffing assignments.', 'in_progress', 'high', '77777777-7777-7777-7777-777777777777', '33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222', '2026-05-10T12:00:00Z'),
-  ('Prepare arrival QR poster', 'Print and laminate the entrance QR poster.', 'todo', 'medium', '77777777-7777-7777-7777-777777777777', '33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222', '2026-05-12T09:00:00Z');
+  ('Prepare arrival QR poster', 'Print and laminate the entrance QR poster.', 'open', 'medium', '77777777-7777-7777-7777-777777777777', '33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222', '2026-05-12T09:00:00Z'),
+  ('Order dietary-label stickers', 'Source and order stickers for meal trays. Waiting on supplier quote.', 'draft', 'low', '77777777-7777-7777-7777-777777777777', null, '22222222-2222-2222-2222-222222222222', '2026-05-08T17:00:00Z'),
+  ('Brief volunteer team leads', 'Run a 30-min orientation for volunteer leads before the event.', 'open', 'high', '77777777-7777-7777-7777-777777777777', '44444444-4444-4444-4444-444444444444', '22222222-2222-2222-2222-222222222222', '2026-05-14T10:00:00Z'),
+  ('Post-event feedback survey', 'Draft and schedule the post-camp feedback form.', 'draft', 'medium', '77777777-7777-7777-7777-777777777777', '22222222-2222-2222-2222-222222222222', '22222222-2222-2222-2222-222222222222', '2026-05-20T12:00:00Z'),
+  ('Emergency kit audit', 'Verify first-aid supplies are stocked and expiry dates are valid. Blocked — waiting on supply delivery.', 'blocked', 'urgent', '77777777-7777-7777-7777-777777777777', '33333333-3333-3333-3333-333333333333', '22222222-2222-2222-2222-222222222222', '2026-05-13T08:00:00Z');
 
 insert into public.checkin_codes (event_id, code, expires_at, created_by)
 values

@@ -15,7 +15,9 @@ export type InventoryStockRecord = {
 
 export type InventoryMovementRecord = {
   id: string;
-  item_id: string;
+  item_id: string | null;
+  item_name: string | null;
+  item_sku: string | null;
   type: string;
   quantity: number | string | null;
   operator_name: string;
@@ -39,6 +41,8 @@ export type InventoryStockItem = {
   sku: string;
   quantity: number;
 };
+
+export type InventoryStockSearchFilter = 'name' | 'sku';
 
 export type InventoryStatusMessage = {
   tone: 'success' | 'error';
@@ -133,6 +137,20 @@ export function buildInventoryStockItems(input: {
     );
 }
 
+export function filterInventoryStockItems(
+  items: InventoryStockItem[],
+  query: string,
+  filter: InventoryStockSearchFilter
+) {
+  const normalizedQuery = query.trim().toLowerCase();
+
+  if (!normalizedQuery) {
+    return items;
+  }
+
+  return items.filter((item) => item[filter].toLowerCase().includes(normalizedQuery));
+}
+
 export function getInventoryStatusMessage(
   status: string | undefined
 ): InventoryStatusMessage | null {
@@ -146,6 +164,11 @@ export function getInventoryStatusMessage(
       return {
         tone: 'success',
         text: 'Item deleted successfully.',
+      };
+    case 'history-cleared':
+      return {
+        tone: 'success',
+        text: 'Inventory history cleared successfully.',
       };
     case 'stock-in':
       return {
