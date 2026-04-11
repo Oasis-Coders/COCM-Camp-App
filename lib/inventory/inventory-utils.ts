@@ -71,6 +71,29 @@ export function isMissingInventoryMovementSnapshotColumnError(error: unknown) {
   return (code === 'PGRST204' || code === '42703') && isInventoryMovementSnapshotColumn;
 }
 
+export function isInventoryDeleteHistoryCompatibilityError(error: unknown) {
+  const code =
+    typeof error === 'object' && error !== null && 'code' in error && typeof error.code === 'string'
+      ? error.code
+      : '';
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === 'object' &&
+          error !== null &&
+          'message' in error &&
+          typeof error.message === 'string'
+        ? error.message
+        : '';
+
+  return (
+    (code === '23502' || code === '23514') &&
+    (message.includes('inventory_movements') ||
+      message.includes('inventory_movements_type_check') ||
+      message.includes('inventory_movements_item_id'))
+  );
+}
+
 function normalizeText(value: string | undefined) {
   const normalized = value?.trim() ?? '';
   return normalized.length > 0 ? normalized : null;
