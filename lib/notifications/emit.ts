@@ -57,13 +57,11 @@ export async function emitTaskEvent(
 
       if (error) {
         // Log but don't throw — notifications must not break task operations
-        // eslint-disable-next-line no-console
         console.warn('[task-notification] Failed to persist notification log:', error.message);
       }
     }
   } catch (err) {
     // Catch-all: notification failures must never break task actions
-    // eslint-disable-next-line no-console
     console.warn(
       '[task-notification] Unexpected error emitting event:',
       err instanceof Error ? err.message : err
