@@ -250,7 +250,7 @@ export default async function DevToolsUsersPage({
                         </p>
                       </td>
                       <td className="px-4 py-4 align-top capitalize text-slate-700">
-                        {entry.role}
+                        {entry.role.replace('_', ' ')}
                       </td>
                       <td className="px-4 py-4 align-top">
                         <span

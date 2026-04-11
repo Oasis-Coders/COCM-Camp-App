@@ -3,7 +3,7 @@
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 
-import { appRoles } from '@/lib/app-config';
+import { appRoles, type AppRole } from '@/lib/app-config';
 
 import { changeUserRole, type ChangeUserRoleState } from './actions';
 
@@ -13,6 +13,10 @@ const initialState: ChangeUserRoleState = {
   role: null,
   submittedAt: null,
 };
+
+function normalizeSelectRole(value: string): AppRole {
+  return appRoles.includes(value as AppRole) ? (value as AppRole) : 'participant';
+}
 
 function SaveButton() {
   const { pending } = useFormStatus();
@@ -35,9 +39,9 @@ export function RoleChangeForm({
 }: {
   authUserId: string;
   currentAuthUserId: string;
-  initialRole: string;
+  initialRole: AppRole;
 }) {
-  const [selectedRole, setSelectedRole] = useState(initialRole.replace(' ', '_'));
+  const [selectedRole, setSelectedRole] = useState<AppRole>(initialRole);
   const [state, formAction] = useActionState(changeUserRole, initialState);
   const messageTone =
     state.status === 'success'
@@ -46,9 +50,13 @@ export function RoleChangeForm({
 
   useEffect(() => {
     if (state.status === 'success' && state.role) {
-      setSelectedRole(state.role);
+      setSelectedRole(normalizeSelectRole(state.role));
     }
   }, [state.role, state.status]);
+
+  useEffect(() => {
+    setSelectedRole(initialRole);
+  }, [initialRole]);
 
   return (
     <form action={formAction} className="space-y-2">
@@ -66,7 +74,7 @@ export function RoleChangeForm({
           name="role"
           value={selectedRole}
           onChange={(event) => {
-            setSelectedRole(event.target.value);
+            setSelectedRole(normalizeSelectRole(event.target.value));
           }}
           className="w-full rounded-xl border border-camp-forest/15 px-3 py-2 text-sm outline-none focus:border-camp-forest/40"
         >
