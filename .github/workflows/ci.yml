@@ -27,7 +27,7 @@ jobs:
         run: pnpm install --no-frozen-lockfile
 
       - name: Format
-        run: pnpm format
+        run: pnpm format:check
 
       - name: Lint
         run: pnpm lint
