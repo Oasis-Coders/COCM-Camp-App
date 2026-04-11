@@ -39,6 +39,14 @@ export async function getSession(): Promise<DemoSession> {
         mode: 'supabase',
       };
     }
+
+    return {
+      isAuthenticated: false,
+      role: 'participant',
+      email: 'participant@demo.local',
+      displayName: 'Demo User',
+      mode: 'supabase',
+    };
   }
 
   const store = await cookies();
@@ -52,7 +60,7 @@ export async function getSession(): Promise<DemoSession> {
     role,
     email,
     displayName,
-    mode: process.env.NEXT_PUBLIC_SUPABASE_URL ? 'supabase' : 'demo',
+    mode: 'demo',
   };
 }
 
