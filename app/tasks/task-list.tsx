@@ -123,15 +123,21 @@ export function TaskList({
   const [editingTask, setEditingTask] = useState<TaskWithProfile | null>(null);
 
   const handleStatusChange = (taskId: string, newStatus: string) => {
-    startTransition(() => {
-      updateTaskStatus(taskId, newStatus);
+    startTransition(async () => {
+      const res = await updateTaskStatus(taskId, newStatus);
+      if (res?.error) {
+        alert(res.error);
+      }
     });
   };
 
   const handleDelete = (taskId: string) => {
     if (window.confirm('Are you sure you want to delete this task?')) {
-      startTransition(() => {
-        deleteTask(taskId);
+      startTransition(async () => {
+        const res = await deleteTask(taskId);
+        if (res?.error) {
+          alert(res.error);
+        }
       });
     }
   };
