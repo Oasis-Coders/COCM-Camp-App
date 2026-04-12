@@ -59,6 +59,19 @@ type CalendarEventFormState = {
   inviteeProfileIds: string[];
 };
 
+type PositionedCalendarItem = {
+  item: CalendarItem;
+  layout: {
+    dayIndex: number;
+    startMinutes: number;
+    endMinutes: number;
+    top: number;
+    height: number;
+    left: number;
+    width: number;
+  };
+};
+
 const dayFormatter = new Intl.DateTimeFormat('en-GB', { weekday: 'short' });
 const dateFormatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
 const timeFormatter = new Intl.DateTimeFormat('en-GB', {
@@ -122,9 +135,103 @@ function getItemLayout(item: CalendarItem, weekStart: Date) {
 
   return {
     dayIndex,
+    startMinutes,
+    endMinutes,
     top,
     height: Math.min(height, 100 - top),
   };
+}
+
+function buildPositionedCalendarItems(
+  items: CalendarItem[],
+  weekStartDate: Date
+): Map<number, PositionedCalendarItem[]> {
+  const dayBuckets = new Map<number, PositionedCalendarItem[]>();
+
+  for (const item of items) {
+    const layout = getItemLayout(item, weekStartDate);
+
+    if (!layout) {
+      continue;
+    }
+
+    const bucket = dayBuckets.get(layout.dayIndex) ?? [];
+    bucket.push({
+      item,
+      layout: {
+        ...layout,
+        left: 0,
+        width: 100,
+      },
+    });
+    dayBuckets.set(layout.dayIndex, bucket);
+  }
+
+  for (const [dayIndex, bucket] of dayBuckets) {
+    const sorted = [...bucket].sort((first, second) => {
+      if (first.layout.startMinutes !== second.layout.startMinutes) {
+        return first.layout.startMinutes - second.layout.startMinutes;
+      }
+
+      return first.layout.endMinutes - second.layout.endMinutes;
+    });
+    const positioned: PositionedCalendarItem[] = [];
+
+    let cluster: PositionedCalendarItem[] = [];
+    let clusterEnd = -Infinity;
+
+    const flushCluster = () => {
+      if (cluster.length === 0) {
+        return;
+      }
+
+      const columns: PositionedCalendarItem[][] = [];
+
+      for (const entry of cluster) {
+        let columnIndex = columns.findIndex((column) => {
+          const lastItem = column[column.length - 1];
+          return lastItem.layout.endMinutes <= entry.layout.startMinutes;
+        });
+
+        if (columnIndex === -1) {
+          columnIndex = columns.length;
+          columns.push([]);
+        }
+
+        columns[columnIndex].push(entry);
+      }
+
+      const columnCount = Math.max(columns.length, 1);
+
+      for (const [columnIndex, column] of columns.entries()) {
+        for (const entry of column) {
+          entry.layout.left = (columnIndex / columnCount) * 100;
+          entry.layout.width = 100 / columnCount;
+          positioned.push(entry);
+        }
+      }
+
+      cluster = [];
+      clusterEnd = -Infinity;
+    };
+
+    for (const entry of sorted) {
+      if (cluster.length === 0 || entry.layout.startMinutes < clusterEnd) {
+        cluster.push(entry);
+        clusterEnd = Math.max(clusterEnd, entry.layout.endMinutes);
+        continue;
+      }
+
+      flushCluster();
+      cluster.push(entry);
+      clusterEnd = entry.layout.endMinutes;
+    }
+
+    flushCluster();
+    dayBuckets.set(dayIndex, positioned);
+  }
+
+  return dayBuckets;
 }
 
 function buildDashboardHref(week: Date, profileId: string) {
@@ -221,6 +328,10 @@ export function DashboardCalendar({
     () => new Map([...profiles, ...inviteeProfiles].map((profile) => [profile.id, profile])),
     [inviteeProfiles, profiles]
   );
+  const positionedItemsByDay = useMemo(
+    () => buildPositionedCalendarItems(items, weekStartDate),
+    [items, weekStartDate]
+  );
   const selectedInviteeProfiles = useMemo(
     () =>
       eventForm
@@ -230,12 +341,13 @@ export function DashboardCalendar({
         : [],
     [eventForm, profileById]
   );
+  const inviteeQuery = inviteeSearch.trim();
   const filteredInviteeOptions = useMemo(() => {
-    if (!eventForm) {
+    if (!eventForm || inviteeQuery.length === 0) {
       return [];
     }
 
-    const query = inviteeSearch.trim().toLowerCase();
+    const query = inviteeQuery.toLowerCase();
 
     return inviteeOptions
       .filter((profile) => !eventForm.inviteeProfileIds.includes(profile.id))
@@ -247,7 +359,7 @@ export function DashboardCalendar({
         return `${profile.displayName} ${profile.email}`.toLowerCase().includes(query);
       })
       .slice(0, 6);
-  }, [eventForm, inviteeOptions, inviteeSearch]);
+  }, [eventForm, inviteeOptions, inviteeQuery]);
   const editingCalendarItem = useMemo(
     () =>
       eventForm?.mode === 'edit'
@@ -583,96 +695,91 @@ export function DashboardCalendar({
                   </div>
                 ) : null}
 
-                {items
-                  .map((item) => ({ item, layout: getItemLayout(item, weekStartDate) }))
-                  .filter((entry) => entry.layout?.dayIndex === dayIndex)
-                  .map(({ item, layout }) => {
-                    if (!layout) {
-                      return null;
-                    }
-
-                    const isOwnPersonalEvent =
-                      item.kind === 'personal' && item.ownerProfileId === currentProfileId;
-                    const isInvitedPersonalEvent =
-                      item.kind === 'personal' && item.ownerProfileId !== currentProfileId;
-                    const isDeclinedInvite =
-                      item.currentInviteStatus === 'declined' && isInvitedPersonalEvent;
-                    const inviteSummary = getInviteStatusSummary(item.invitees);
-                    const itemClassName = `absolute left-2 right-2 z-10 overflow-hidden rounded-2xl border px-3 py-2 text-left text-xs shadow-sm transition ${
-                      item.kind === 'event'
-                        ? 'border-camp-forest/15 bg-camp-forest text-white'
-                        : item.currentInviteStatus === 'pending' && isInvitedPersonalEvent
-                          ? 'border-slate-200 bg-slate-100 text-slate-700'
-                          : item.currentInviteStatus === 'declined' && isInvitedPersonalEvent
-                            ? 'border-slate-200 bg-white text-slate-500 opacity-80'
-                            : 'border-camp-moss/20 bg-camp-sky text-camp-forest'
-                    } ${
-                      item.kind === 'personal' &&
-                      ((canEdit && isOwnPersonalEvent) ||
-                        (selectedProfileId === currentProfileId && isInvitedPersonalEvent))
-                        ? 'hover:border-camp-forest/35 hover:bg-white'
-                        : ''
-                    } ${isDeclinedInvite ? 'line-through decoration-2' : ''}`;
-                    const itemStyle = {
-                      top: `${layout.top}%`,
-                      height: `${layout.height}%`,
-                    };
-                    const content = (
-                      <>
-                        <p className="font-semibold">{item.title}</p>
-                        <p className="mt-1 opacity-85">
-                          {timeFormatter.format(new Date(item.startsAt))}-
-                          {timeFormatter.format(new Date(item.endsAt))}
+                {(positionedItemsByDay.get(dayIndex) ?? []).map(({ item, layout }) => {
+                  const isOwnPersonalEvent =
+                    item.kind === 'personal' && item.ownerProfileId === currentProfileId;
+                  const isInvitedPersonalEvent =
+                    item.kind === 'personal' && item.ownerProfileId !== currentProfileId;
+                  const isDeclinedInvite =
+                    item.currentInviteStatus === 'declined' && isInvitedPersonalEvent;
+                  const inviteSummary = getInviteStatusSummary(item.invitees);
+                  const itemClassName = `absolute z-10 overflow-hidden rounded-2xl border px-3 py-2 text-left text-xs shadow-sm transition ${
+                    item.kind === 'event'
+                      ? 'border-camp-forest/15 bg-camp-forest text-white'
+                      : item.currentInviteStatus === 'pending' && isInvitedPersonalEvent
+                        ? 'border-slate-200 bg-slate-100 text-slate-700'
+                        : item.currentInviteStatus === 'declined' && isInvitedPersonalEvent
+                          ? 'border-slate-200 bg-white text-slate-500 opacity-80'
+                          : 'border-camp-moss/20 bg-camp-sky text-camp-forest'
+                  } ${
+                    item.kind === 'personal' &&
+                    ((canEdit && isOwnPersonalEvent) ||
+                      (selectedProfileId === currentProfileId && isInvitedPersonalEvent))
+                      ? 'hover:border-camp-forest/35 hover:bg-white'
+                      : ''
+                  } ${isDeclinedInvite ? 'line-through decoration-2' : ''}`;
+                  const itemStyle = {
+                    top: `${layout.top}%`,
+                    left: `calc(${layout.left}% + 0.5rem)`,
+                    width: `calc(${layout.width}% - 1rem)`,
+                    height: `${layout.height}%`,
+                  };
+                  const content = (
+                    <>
+                      <p className="font-semibold">{item.title}</p>
+                      <p className="mt-1 opacity-85">
+                        {timeFormatter.format(new Date(item.startsAt))}-
+                        {timeFormatter.format(new Date(item.endsAt))}
+                      </p>
+                      {item.location ? (
+                        <p className="mt-1 truncate opacity-80">{item.location}</p>
+                      ) : null}
+                      {item.currentInviteStatus && isInvitedPersonalEvent ? (
+                        <p className="mt-1 font-semibold opacity-85">
+                          {getInviteStatusLabel(item.currentInviteStatus)}
                         </p>
-                        {item.location ? (
-                          <p className="mt-1 truncate opacity-80">{item.location}</p>
-                        ) : null}
-                        {item.currentInviteStatus && isInvitedPersonalEvent ? (
-                          <p className="mt-1 font-semibold opacity-85">
-                            {getInviteStatusLabel(item.currentInviteStatus)}
-                          </p>
-                        ) : null}
-                        {isOwnPersonalEvent && inviteSummary.length > 0 ? (
-                          <p className="mt-1 truncate opacity-85">{inviteSummary.join(' · ')}</p>
-                        ) : null}
-                      </>
-                    );
+                      ) : null}
+                      {isOwnPersonalEvent && inviteSummary.length > 0 ? (
+                        <p className="mt-1 truncate opacity-85">{inviteSummary.join(' · ')}</p>
+                      ) : null}
+                    </>
+                  );
 
-                    if (item.kind === 'personal') {
-                      const canOpenPersonalEvent =
-                        (canEdit && isOwnPersonalEvent) ||
-                        (selectedProfileId === currentProfileId && isInvitedPersonalEvent);
+                  if (item.kind === 'personal') {
+                    const canOpenPersonalEvent =
+                      (canEdit && isOwnPersonalEvent) ||
+                      (selectedProfileId === currentProfileId && isInvitedPersonalEvent);
 
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          disabled={!canOpenPersonalEvent || pending}
-                          className={itemClassName}
-                          style={itemStyle}
-                          onPointerDown={(event) => event.stopPropagation()}
-                          onClick={() => openPersonalEvent(item)}
-                        >
-                          {content}
-                        </button>
-                      );
-                    }
-
-                    return item.href ? (
-                      <Link
+                    return (
+                      <button
                         key={item.id}
-                        href={item.href}
+                        type="button"
+                        disabled={!canOpenPersonalEvent || pending}
                         className={itemClassName}
                         style={itemStyle}
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={() => openPersonalEvent(item)}
                       >
                         {content}
-                      </Link>
-                    ) : (
-                      <div key={item.id} className={itemClassName} style={itemStyle}>
-                        {content}
-                      </div>
+                      </button>
                     );
-                  })}
+                  }
+
+                  return item.href ? (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className={itemClassName}
+                      style={itemStyle}
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <div key={item.id} className={itemClassName} style={itemStyle}>
+                      {content}
+                    </div>
+                  );
+                })}
               </div>
             ))}
           </div>
@@ -839,35 +946,39 @@ export function DashboardCalendar({
                   </p>
                 )}
 
-                <div className="mt-3 rounded-2xl border border-camp-forest/10 bg-camp-sand/20 p-2">
-                  {filteredInviteeOptions.length > 0 ? (
-                    filteredInviteeOptions.map((profile) => (
-                      <button
-                        key={profile.id}
-                        type="button"
-                        disabled={pending}
-                        onClick={() => addInvitee(profile.id)}
-                        className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-white disabled:cursor-wait disabled:opacity-70"
-                      >
-                        <span>
-                          <span className="block text-sm font-semibold text-camp-forest">
-                            {profile.displayName}
-                          </span>
-                          <span className="block text-xs font-normal text-slate-500">
-                            {profile.email}
-                          </span>
-                        </span>
-                        <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-camp-forest">
-                          Add
-                        </span>
-                      </button>
-                    ))
-                  ) : (
-                    <p className="px-3 py-2 text-xs font-normal text-slate-500">
-                      No matching users available.
-                    </p>
-                  )}
-                </div>
+                {inviteeQuery.length > 0 ? (
+                  <div className="mt-3 rounded-2xl border border-camp-forest/10 bg-camp-sand/20 shadow-sm">
+                    <div className="max-h-60 overflow-y-auto p-2">
+                      {filteredInviteeOptions.length > 0 ? (
+                        filteredInviteeOptions.map((profile) => (
+                          <button
+                            key={profile.id}
+                            type="button"
+                            disabled={pending}
+                            onClick={() => addInvitee(profile.id)}
+                            className="flex w-full items-center justify-between gap-3 rounded-xl px-3 py-2 text-left transition hover:bg-white disabled:cursor-wait disabled:opacity-70"
+                          >
+                            <span>
+                              <span className="block text-sm font-semibold text-camp-forest">
+                                {profile.displayName}
+                              </span>
+                              <span className="block text-xs font-normal text-slate-500">
+                                {profile.email}
+                              </span>
+                            </span>
+                            <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-camp-forest">
+                              Add
+                            </span>
+                          </button>
+                        ))
+                      ) : (
+                        <p className="px-3 py-2 text-xs font-normal text-slate-500">
+                          No matching users available.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                ) : null}
 
                 {editingCalendarItem?.invitees && editingCalendarItem.invitees.length > 0 ? (
                   <div className="mt-3 rounded-2xl border border-camp-forest/10 bg-white p-3">
