@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { AppShell } from '@/components/layout/app-shell';
 import { getSession } from '@/lib/auth/session';
@@ -22,6 +23,10 @@ const devToolItems = [
 
 export default async function DevToolsPage() {
   const session = await getSession();
+
+  if (!session.isAuthenticated) {
+    redirect('/sign-in?redirectTo=/dev-tools');
+  }
 
   return (
     <AppShell title="Dev Tools" eyebrow="Temporary internal tools">

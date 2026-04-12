@@ -191,6 +191,11 @@ export default async function DevToolsUsersPage({
 }) {
   const params = await searchParams;
   const session = await getSession();
+
+  if (!session.isAuthenticated) {
+    redirect('/sign-in?redirectTo=/dev-tools/users');
+  }
+
   const directoryEntries = await loadDirectoryEntries();
   const currentAuthUserId = await loadCurrentAuthUserId();
   const directoryMessage = getDirectoryMessage(params.directory);

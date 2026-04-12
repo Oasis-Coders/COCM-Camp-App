@@ -34,7 +34,10 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
 
           <div className="mt-5 flex min-h-0 flex-1 flex-col">
             <SidebarNav
-              items={navItems.filter((item) => !item.roles || item.roles.includes(session.role))}
+              items={navItems.filter(
+                (item) =>
+                  session.isAuthenticated && (!item.roles || item.roles.includes(session.role))
+              )}
             />
 
             {session.isAuthenticated && (

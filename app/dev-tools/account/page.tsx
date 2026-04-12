@@ -1,8 +1,16 @@
 import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
 import { AppShell } from '@/components/layout/app-shell';
+import { getSession } from '@/lib/auth/session';
 
-export default function DevToolsAccountPage() {
+export default async function DevToolsAccountPage() {
+  const session = await getSession();
+
+  if (!session.isAuthenticated) {
+    redirect('/sign-in?redirectTo=/dev-tools/account');
+  }
+
   return (
     <AppShell title="Dev Tools" eyebrow="Temporary internal tools">
       <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
