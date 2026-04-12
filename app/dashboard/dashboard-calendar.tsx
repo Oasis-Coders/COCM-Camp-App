@@ -341,14 +341,16 @@ export function DashboardCalendar({
             <Link
               href={buildDashboardHref(previousWeek, selectedProfileId)}
               className="rounded-2xl border border-camp-forest/10 bg-camp-sand/45 px-4 py-3 text-center text-sm font-semibold text-camp-forest transition hover:bg-camp-sand"
+              aria-label="Previous week"
             >
-              Previous
+              &lt;-
             </Link>
             <Link
               href={buildDashboardHref(nextWeek, selectedProfileId)}
               className="rounded-2xl bg-camp-forest px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-camp-moss"
+              aria-label="Next week"
             >
-              Next
+              -&gt;
             </Link>
           </div>
         </div>
@@ -487,9 +489,7 @@ export function DashboardCalendar({
                         <button
                           key={item.id}
                           type="button"
-                          disabled={
-                            !canEdit || item.ownerProfileId !== currentProfileId || pending
-                          }
+                          disabled={!canEdit || item.ownerProfileId !== currentProfileId || pending}
                           className={itemClassName}
                           style={itemStyle}
                           onPointerDown={(event) => event.stopPropagation()}
@@ -555,9 +555,7 @@ export function DashboardCalendar({
                   id="calendar-event-modal-title"
                   className="mt-2 font-serif text-3xl text-camp-forest"
                 >
-                  {eventForm.mode === 'edit'
-                    ? 'Edit calendar event'
-                    : 'Create calendar event'}
+                  {eventForm.mode === 'edit' ? 'Edit calendar event' : 'Create calendar event'}
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">
                   Add the timing, invitees, notes, and where everyone should meet.
@@ -639,9 +637,7 @@ export function DashboardCalendar({
                     value={eventForm.location}
                     onChange={(event) => updateEventForm({ location: event.target.value })}
                     placeholder={
-                      eventForm.locationType === 'online'
-                        ? 'https://zoom.us/j/...'
-                        : 'North Hall'
+                      eventForm.locationType === 'online' ? 'https://zoom.us/j/...' : 'North Hall'
                     }
                     className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
                   />
@@ -681,8 +677,7 @@ export function DashboardCalendar({
 
               <p className="rounded-2xl bg-camp-sky/55 px-4 py-3 text-sm text-camp-forest">
                 {dateFormatter.format(eventForm.startsAt)} |{' '}
-                {timeFormatter.format(eventForm.startsAt)}-
-                {timeFormatter.format(eventForm.endsAt)}
+                {timeFormatter.format(eventForm.startsAt)}-{timeFormatter.format(eventForm.endsAt)}
               </p>
             </div>
 

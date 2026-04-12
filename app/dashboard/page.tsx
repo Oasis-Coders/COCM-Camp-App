@@ -56,10 +56,7 @@ type PersonalEventRow = {
 };
 
 type InviteeEventRow = {
-  event:
-    | PersonalEventRow
-    | PersonalEventRow[]
-    | null;
+  event: PersonalEventRow | PersonalEventRow[] | null;
 };
 
 function getWeekStart(input?: string) {
@@ -261,8 +258,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         return Array.isArray(row.event) ? row.event : [row.event];
       })
       .filter(
-        (event) =>
-          new Date(event.starts_at) < weekEnd && new Date(event.ends_at) > weekStart
+        (event) => new Date(event.starts_at) < weekEnd && new Date(event.ends_at) > weekStart
       );
     const personalEventsById = new Map(
       [...ownedPersonalEvents, ...invitedPersonalEvents].map((event) => [event.id, event])
