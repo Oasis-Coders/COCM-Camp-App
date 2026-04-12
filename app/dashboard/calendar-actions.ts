@@ -19,10 +19,17 @@ export type UpdateCalendarEventInput = CreateCalendarEventInput & {
   id: string;
 };
 
+export type RespondToCalendarInviteInput = {
+  eventId: string;
+  status: 'accepted' | 'declined';
+};
+
 export type CalendarEventResult = {
   status: 'success' | 'error';
   message: string;
 };
+
+type SupabaseServerClient = NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>;
 
 type NormalizedCalendarEventInput = {
   title: string;
@@ -88,8 +95,11 @@ function getCalendarEventErrorMessage(error: unknown) {
 
   if (
     code === '42P01' ||
+    code === '42703' ||
     normalizedMessage.includes('personal_calendar_events') ||
-    normalizedMessage.includes('personal_calendar_event_invitees')
+    normalizedMessage.includes('personal_calendar_event_invitees') ||
+    normalizedMessage.includes('invite_status') ||
+    normalizedMessage.includes('responded_at')
   ) {
     return 'Calendar storage is not ready yet. The Supabase migration needs to run.';
   }
@@ -133,26 +143,49 @@ async function getCalendarActionContext() {
   return { supabase, profileId: profile.id as string };
 }
 
-async function replaceInvitees(
-  supabase: NonNullable<Awaited<ReturnType<typeof createSupabaseServerClient>>>,
+async function syncInvitees(
+  supabase: SupabaseServerClient,
   eventId: string,
   inviteeProfileIds: string[]
 ) {
-  const { error: deleteError } = await supabase
+  const { data: existingInvitees, error: readError } = await supabase
     .from('personal_calendar_event_invitees')
-    .delete()
+    .select('invitee_profile_id')
     .eq('event_id', eventId);
 
-  if (deleteError) {
-    throw deleteError;
+  if (readError) {
+    throw readError;
   }
 
-  if (inviteeProfileIds.length === 0) {
+  const nextInviteeIds = new Set(inviteeProfileIds);
+  const existingInviteeIds = new Set(
+    (existingInvitees ?? []).map((invitee) => invitee.invitee_profile_id as string)
+  );
+  const removedInviteeIds = [...existingInviteeIds].filter(
+    (inviteeProfileId) => !nextInviteeIds.has(inviteeProfileId)
+  );
+  const addedInviteeIds = [...nextInviteeIds].filter(
+    (inviteeProfileId) => !existingInviteeIds.has(inviteeProfileId)
+  );
+
+  if (removedInviteeIds.length > 0) {
+    const { error: deleteError } = await supabase
+      .from('personal_calendar_event_invitees')
+      .delete()
+      .eq('event_id', eventId)
+      .in('invitee_profile_id', removedInviteeIds);
+
+    if (deleteError) {
+      throw deleteError;
+    }
+  }
+
+  if (addedInviteeIds.length === 0) {
     return;
   }
 
   const { error: insertError } = await supabase.from('personal_calendar_event_invitees').insert(
-    inviteeProfileIds.map((inviteeProfileId) => ({
+    addedInviteeIds.map((inviteeProfileId) => ({
       event_id: eventId,
       invitee_profile_id: inviteeProfileId,
     }))
@@ -189,7 +222,7 @@ export async function createPersonalCalendarEvent(
       throw error;
     }
 
-    await replaceInvitees(supabase, event.id as string, inviteeProfileIds);
+    await syncInvitees(supabase, event.id as string, inviteeProfileIds);
 
     revalidatePath('/dashboard');
 
@@ -257,7 +290,7 @@ export async function updatePersonalCalendarEvent(
       throw error;
     }
 
-    await replaceInvitees(supabase, eventId, inviteeProfileIds);
+    await syncInvitees(supabase, eventId, inviteeProfileIds);
 
     revalidatePath('/dashboard');
 
@@ -274,6 +307,54 @@ export async function updatePersonalCalendarEvent(
         eventId: input.id,
         startsAt: input.startsAt,
         endsAt: input.endsAt,
+      },
+    });
+
+    return {
+      status: 'error',
+      message: getCalendarEventErrorMessage(error),
+    };
+  }
+}
+
+export async function respondToCalendarInvite(
+  input: RespondToCalendarInviteInput
+): Promise<CalendarEventResult> {
+  try {
+    const eventId = input.eventId.trim();
+
+    if (!eventId) {
+      throw new Error('Choose an invitation to update.');
+    }
+
+    const { supabase, profileId } = await getCalendarActionContext();
+    const { error } = await supabase
+      .from('personal_calendar_event_invitees')
+      .update({
+        invite_status: input.status,
+        responded_at: new Date().toISOString(),
+      })
+      .eq('event_id', eventId)
+      .eq('invitee_profile_id', profileId);
+
+    if (error) {
+      throw error;
+    }
+
+    revalidatePath('/dashboard');
+
+    return {
+      status: 'success',
+      message: input.status === 'accepted' ? 'Invite accepted.' : 'Invite declined.',
+    };
+  } catch (error) {
+    logServerError({
+      scope: 'dashboard.respond_calendar_invite',
+      message: 'Error responding to personal calendar invite',
+      error,
+      context: {
+        eventId: input.eventId,
+        status: input.status,
       },
     });
 

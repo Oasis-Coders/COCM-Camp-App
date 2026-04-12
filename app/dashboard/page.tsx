@@ -52,7 +52,10 @@ type PersonalEventRow = {
   location_type: 'physical' | 'online' | null;
   location: string | null;
   notes: string | null;
-  personal_calendar_event_invitees?: { invitee_profile_id: string }[];
+  personal_calendar_event_invitees?: {
+    invitee_profile_id: string;
+    invite_status: 'pending' | 'accepted' | 'declined' | null;
+  }[];
 };
 
 type InviteeEventRow = {
@@ -196,7 +199,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           location,
           notes,
           personal_calendar_event_invitees (
-            invitee_profile_id
+            invitee_profile_id,
+            invite_status
           )
         `
         )
@@ -217,7 +221,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             location,
             notes,
             personal_calendar_event_invitees (
-              invitee_profile_id
+              invitee_profile_id,
+              invite_status
             )
           )
         `
@@ -264,20 +269,30 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       [...ownedPersonalEvents, ...invitedPersonalEvents].map((event) => [event.id, event])
     );
 
-    const personalItems = Array.from(personalEventsById.values()).map((event) => ({
-      id: `personal-${event.id}`,
-      sourceId: event.id,
-      ownerProfileId: event.owner_profile_id,
-      title: event.title,
-      locationType: event.location_type ?? 'physical',
-      location: event.location,
-      notes: event.notes,
-      inviteeProfileIds:
-        event.personal_calendar_event_invitees?.map((invitee) => invitee.invitee_profile_id) ?? [],
-      startsAt: event.starts_at,
-      endsAt: event.ends_at,
-      kind: 'personal' as const,
-    }));
+    const personalItems = Array.from(personalEventsById.values()).map((event) => {
+      const invitees =
+        event.personal_calendar_event_invitees?.map((invitee) => ({
+          profileId: invitee.invitee_profile_id,
+          status: invitee.invite_status ?? ('pending' as const),
+        })) ?? [];
+      const currentInvite = invitees.find((invitee) => invitee.profileId === selectedProfileId);
+
+      return {
+        id: `personal-${event.id}`,
+        sourceId: event.id,
+        ownerProfileId: event.owner_profile_id,
+        title: event.title,
+        locationType: event.location_type ?? 'physical',
+        location: event.location,
+        notes: event.notes,
+        inviteeProfileIds: invitees.map((invitee) => invitee.profileId),
+        invitees,
+        currentInviteStatus: currentInvite?.status,
+        startsAt: event.starts_at,
+        endsAt: event.ends_at,
+        kind: 'personal' as const,
+      };
+    });
 
     calendarItems = [...registrationItems, ...personalItems].sort(
       (first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime()
