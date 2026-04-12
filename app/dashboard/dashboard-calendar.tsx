@@ -595,6 +595,8 @@ export function DashboardCalendar({
                       item.kind === 'personal' && item.ownerProfileId === currentProfileId;
                     const isInvitedPersonalEvent =
                       item.kind === 'personal' && item.ownerProfileId !== currentProfileId;
+                    const isDeclinedInvite =
+                      item.currentInviteStatus === 'declined' && isInvitedPersonalEvent;
                     const inviteSummary = getInviteStatusSummary(item.invitees);
                     const itemClassName = `absolute left-2 right-2 z-10 overflow-hidden rounded-2xl border px-3 py-2 text-left text-xs shadow-sm transition ${
                       item.kind === 'event'
@@ -610,7 +612,7 @@ export function DashboardCalendar({
                         (selectedProfileId === currentProfileId && isInvitedPersonalEvent))
                         ? 'hover:border-camp-forest/35 hover:bg-white'
                         : ''
-                    }`;
+                    } ${isDeclinedInvite ? 'line-through decoration-2' : ''}`;
                     const itemStyle = {
                       top: `${layout.top}%`,
                       height: `${layout.height}%`,
@@ -990,10 +992,43 @@ export function DashboardCalendar({
                   {profileById.get(rsvpEvent.ownerProfileId ?? '')?.displayName ?? 'Camp user'}
                 </span>
               </p>
-              {rsvpEvent.location ? <p>Location: {rsvpEvent.location}</p> : null}
-              {rsvpEvent.notes ? (
-                <p className="rounded-2xl bg-camp-sand/35 px-4 py-3">{rsvpEvent.notes}</p>
-              ) : null}
+              <div className="grid gap-3 rounded-2xl border border-camp-forest/10 bg-camp-sand/20 p-4">
+                <p>
+                  <span className="font-semibold text-camp-forest">Location:</span>{' '}
+                  {rsvpEvent.location || 'No location provided'}
+                </p>
+                <p>
+                  <span className="font-semibold text-camp-forest">Notes:</span>{' '}
+                  {rsvpEvent.notes || 'No notes provided'}
+                </p>
+                <div>
+                  <p className="font-semibold text-camp-forest">Other attendees</p>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {(rsvpEvent.invitees ?? [])
+                      .filter((invitee) => invitee.profileId !== currentProfileId)
+                      .map((invitee) => {
+                        const profile = profileById.get(invitee.profileId);
+
+                        return (
+                          <span
+                            key={invitee.profileId}
+                            className={`rounded-full border px-3 py-1 text-xs font-semibold ${getInviteStatusClassName(
+                              invitee.status
+                            )}`}
+                          >
+                            {profile?.displayName ?? 'Camp user'} ·{' '}
+                            {getInviteStatusLabel(invitee.status)}
+                          </span>
+                        );
+                      })}
+                    {(rsvpEvent.invitees ?? []).filter(
+                      (invitee) => invitee.profileId !== currentProfileId
+                    ).length === 0 ? (
+                      <span className="text-xs text-slate-500">No other invitees yet.</span>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
               <p
                 className={`w-fit rounded-full border px-3 py-1 text-xs font-semibold ${getInviteStatusClassName(
                   rsvpEvent.currentInviteStatus ?? 'pending'

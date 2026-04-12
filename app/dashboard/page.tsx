@@ -306,6 +306,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           status: invitee.invite_status ?? ('pending' as const),
         })) ?? [];
       const currentInvite = invitees.find((invitee) => invitee.profileId === selectedProfileId);
+      const isSelectedProfileInvited = event.owner_profile_id !== selectedProfileId;
 
       return {
         id: `personal-${event.id}`,
@@ -317,7 +318,9 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         notes: event.notes,
         inviteeProfileIds: invitees.map((invitee) => invitee.profileId),
         invitees,
-        currentInviteStatus: currentInvite?.status,
+        currentInviteStatus: isSelectedProfileInvited
+          ? (currentInvite?.status ?? 'pending')
+          : undefined,
         startsAt: event.starts_at,
         endsAt: event.ends_at,
         kind: 'personal' as const,
