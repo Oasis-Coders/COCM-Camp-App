@@ -22,7 +22,11 @@ export const navItems: NavItem[] = [
     roles: staffPrivilegedRoles,
   },
   { href: '/profile', label: 'Profile', description: 'Account details' },
-  { href: '/dev-tools', label: 'Dev Tools', description: 'Temporary internal tool menu' },
+  {
+    href: '/dev-tools',
+    label: 'Dev Tools',
+    description: 'Temporary internal tool menu',
+  },
   {
     href: '/admin',
     label: 'Admin',
