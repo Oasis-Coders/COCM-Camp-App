@@ -6,6 +6,7 @@ import { startTransition, useMemo, useState } from 'react';
 
 import {
   createPersonalCalendarEvent,
+  deletePersonalCalendarEvent,
   respondToCalendarInvite,
   updatePersonalCalendarEvent,
 } from './calendar-actions';
@@ -295,6 +296,27 @@ function NavArrowIcon({ direction }: { direction: 'left' | 'right' }) {
   );
 }
 
+function BucketIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className="size-4"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M7 7h10" />
+      <path d="M9 7l1-2h4l1 2" />
+      <path d="M6 7h12l-1 12H7L6 7Z" />
+      <path d="M10 11v5" />
+      <path d="M14 11v5" />
+    </svg>
+  );
+}
+
 export function DashboardCalendar({
   currentProfileId,
   selectedProfileId,
@@ -528,6 +550,30 @@ export function DashboardCalendar({
 
       if (result.status === 'success') {
         setRsvpEvent(null);
+        router.refresh();
+      }
+    });
+  }
+
+  function deleteEvent() {
+    if (!eventForm?.id) {
+      return;
+    }
+
+    const confirmed = window.confirm('Delete this calendar event?');
+
+    if (!confirmed) {
+      return;
+    }
+
+    setPending(true);
+    startTransition(async () => {
+      const result = await deletePersonalCalendarEvent({ id: eventForm.id! });
+      setMessage(result.message);
+      setPending(false);
+
+      if (result.status === 'success') {
+        setEventForm(null);
         router.refresh();
       }
     });
@@ -1046,6 +1092,17 @@ export function DashboardCalendar({
             </div>
 
             <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+              {eventForm.mode === 'edit' ? (
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={deleteEvent}
+                  className="inline-flex items-center justify-center gap-2 rounded-2xl border border-camp-forest/10 bg-camp-sand/35 px-5 py-3 text-sm font-semibold text-camp-forest transition hover:bg-camp-sand/60 disabled:cursor-wait disabled:opacity-70"
+                >
+                  <BucketIcon />
+                  Delete
+                </button>
+              ) : null}
               <button
                 type="button"
                 disabled={pending}

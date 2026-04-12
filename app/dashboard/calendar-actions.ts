@@ -24,6 +24,10 @@ export type RespondToCalendarInviteInput = {
   status: 'accepted' | 'declined';
 };
 
+export type DeleteCalendarEventInput = {
+  id: string;
+};
+
 export type CalendarEventResult = {
   status: 'success' | 'error';
   message: string;
@@ -355,6 +359,61 @@ export async function respondToCalendarInvite(
       context: {
         eventId: input.eventId,
         status: input.status,
+      },
+    });
+
+    return {
+      status: 'error',
+      message: getCalendarEventErrorMessage(error),
+    };
+  }
+}
+
+export async function deletePersonalCalendarEvent(
+  input: DeleteCalendarEventInput
+): Promise<CalendarEventResult> {
+  try {
+    const eventId = input.id.trim();
+
+    if (!eventId) {
+      throw new Error('Choose an event to delete.');
+    }
+
+    const { supabase, profileId } = await getCalendarActionContext();
+    const { data: existingEvent, error: readError } = await supabase
+      .from('personal_calendar_events')
+      .select('id')
+      .eq('id', eventId)
+      .eq('owner_profile_id', profileId)
+      .single();
+
+    if (readError || !existingEvent) {
+      throw new Error('You can only delete events on your own calendar.');
+    }
+
+    const { error } = await supabase
+      .from('personal_calendar_events')
+      .delete()
+      .eq('id', eventId)
+      .eq('owner_profile_id', profileId);
+
+    if (error) {
+      throw error;
+    }
+
+    revalidatePath('/dashboard');
+
+    return {
+      status: 'success',
+      message: 'Event deleted.',
+    };
+  } catch (error) {
+    logServerError({
+      scope: 'dashboard.delete_calendar_event',
+      message: 'Error deleting personal calendar event',
+      error,
+      context: {
+        eventId: input.id,
       },
     });
 
