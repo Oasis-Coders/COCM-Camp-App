@@ -278,6 +278,23 @@ function getInviteStatusSummary(invitees: CalendarInvitee[] = []) {
   ].filter(Boolean);
 }
 
+function NavArrowIcon({ direction }: { direction: 'left' | 'right' }) {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+      className={`size-4 ${direction === 'right' ? 'rotate-180' : ''}`}
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.25"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M14 6L8 12L14 18" />
+    </svg>
+  );
+}
+
 export function DashboardCalendar({
   currentProfileId,
   selectedProfileId,
@@ -587,17 +604,17 @@ export function DashboardCalendar({
           <div className="grid grid-cols-2 gap-2">
             <Link
               href={buildDashboardHref(previousWeek, selectedProfileId)}
-              className="rounded-2xl border border-camp-forest/10 bg-camp-sand/45 px-4 py-3 text-center text-sm font-semibold text-camp-forest transition hover:bg-camp-sand"
+              className="inline-flex items-center justify-center rounded-2xl border border-camp-forest/10 bg-camp-sand/45 px-4 py-3 text-center text-sm font-semibold text-camp-forest transition hover:bg-camp-sand"
               aria-label="Previous week"
             >
-              &lt;-
+              <NavArrowIcon direction="left" />
             </Link>
             <Link
               href={buildDashboardHref(nextWeek, selectedProfileId)}
-              className="rounded-2xl bg-camp-forest px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-camp-moss"
+              className="inline-flex items-center justify-center rounded-2xl bg-camp-forest px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-camp-moss"
               aria-label="Next week"
             >
-              -&gt;
+              <NavArrowIcon direction="right" />
             </Link>
           </div>
         </div>
