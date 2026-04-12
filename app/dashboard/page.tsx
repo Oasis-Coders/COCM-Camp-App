@@ -2,6 +2,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { MetricCard } from '@/components/layout/metric-card';
 import { staffPrivilegedRoles } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
+import { logServerError } from '@/lib/observability/logger';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -163,6 +164,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       : currentProfile?.id;
 
   let calendarItems: CalendarItem[] = [];
+  let calendarLoadMessage: string | null = null;
 
   if (selectedProfileId) {
     const [registrationsResult, personalEventsResult, invitedEventsResult] = await Promise.all([
@@ -253,6 +255,34 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       ];
     });
 
+    if (registrationsResult.error) {
+      logServerError({
+        scope: 'dashboard.load_event_registrations',
+        message: 'Error loading event registrations for dashboard calendar',
+        error: registrationsResult.error,
+        context: {
+          selectedProfileId,
+          weekStart: weekStart.toISOString(),
+          weekEnd: weekEnd.toISOString(),
+        },
+      });
+    }
+
+    if (personalEventsResult.error || invitedEventsResult.error) {
+      logServerError({
+        scope: 'dashboard.load_personal_calendar_events',
+        message: 'Error loading personal dashboard calendar events',
+        error: personalEventsResult.error ?? invitedEventsResult.error,
+        context: {
+          selectedProfileId,
+          weekStart: weekStart.toISOString(),
+          weekEnd: weekEnd.toISOString(),
+        },
+      });
+      calendarLoadMessage =
+        'Personal calendar events could not be loaded. The calendar storage migration may need to run.';
+    }
+
     const ownedPersonalEvents = (personalEventsResult.data ?? []) as PersonalEventRow[];
     const invitedPersonalEvents = ((invitedEventsResult.data ?? []) as InviteeEventRow[])
       .flatMap((row) => {
@@ -320,20 +350,27 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       </div>
 
       {currentProfile && selectedProfileId ? (
-        <DashboardCalendar
-          currentProfileId={currentProfile.id}
-          selectedProfileId={selectedProfileId}
-          profiles={profiles.length > 0 ? profiles : [mapProfile(currentProfile)]}
-          inviteeProfiles={
-            inviteeProfiles.length > 0
-              ? inviteeProfiles
-              : profiles.length > 0
-                ? profiles
-                : [mapProfile(currentProfile)]
-          }
-          items={calendarItems}
-          weekStart={toDateInputValue(weekStart)}
-        />
+        <>
+          {calendarLoadMessage ? (
+            <div className="mb-4 rounded-2xl border border-camp-ember/20 bg-camp-ember/10 px-4 py-3 text-sm font-semibold text-camp-forest">
+              {calendarLoadMessage}
+            </div>
+          ) : null}
+          <DashboardCalendar
+            currentProfileId={currentProfile.id}
+            selectedProfileId={selectedProfileId}
+            profiles={profiles.length > 0 ? profiles : [mapProfile(currentProfile)]}
+            inviteeProfiles={
+              inviteeProfiles.length > 0
+                ? inviteeProfiles
+                : profiles.length > 0
+                  ? profiles
+                  : [mapProfile(currentProfile)]
+            }
+            items={calendarItems}
+            weekStart={toDateInputValue(weekStart)}
+          />
+        </>
       ) : (
         <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 text-sm text-slate-600 shadow-panel">
           Your profile needs to finish syncing before the dashboard calendar can load.
