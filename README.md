@@ -1,6 +1,6 @@
 # Camp Management App
 
-A collaborative web app for running camps and events with less manual coordination. The goal is to give staff, admins, and participants one place for sign-in, event registration, task tracking, and check-in, with room for future chat and realtime collaboration.
+A collaborative web app for running camps and events with less manual coordination. The goal is to give staff, admins, and participants one place for sign-in, event registration, task tracking, calendar coordination, inventory, and check-in, with room for future chat and realtime collaboration.
 
 ## Live app
 
@@ -21,36 +21,41 @@ The long-term product direction includes:
 - Sign-in and account access
 - Role-based access for admins, staff, and participants
 - Event browsing and registration
+- Personal and team calendar coordination
 - Task management for operational work
+- Inventory tracking and stock movement history
 - Check-in support during live events
 - Future support for chat and realtime coordination
 
 ## Current phase
 
-We are in Phase 2 (Tasks and check-in). The core operations foundation is now in place: auth, roles, events, registrations, inventory, tasks, admin/dev tooling, and CI-backed automated tests. The next product milestone is check-in.
+We are in Phase 2 (Tasks and check-in). The core operations foundation is now in place: auth, roles, events, registrations, dashboard calendar, inventory, tasks, admin/dev tooling, and CI-backed automated tests. The next product milestone is check-in.
 
 Completed so far:
 
-- ✅ Main app structure and navigation
-- ✅ Sign-in flow and auth with Supabase
-- ✅ Database foundation with RLS and role-based permissions
-- ✅ Event browsing, registration, and admin management
-- ✅ Inventory tracking
-- ✅ Dev Tools user administration for account lookup, role changes, password resets, and test support
-- ✅ Task management — create, assign, reprioritize, transition, and close tasks (admin/staff)
-- ✅ Unit and e2e testing with isolated test data
-- ✅ CI/CD and deployment to Vercel
+- [x] Main app structure and role-aware navigation
+- [x] Sign-in, sign-up, profile sync, and Supabase auth support
+- [x] Database foundation with RLS and role-based permissions
+- [x] Event browsing, registration, waitlist-aware capacity handling, and admin rosters
+- [x] Dashboard weekly calendar with registrations, personal events, invitees, notes, and online or physical locations
+- [x] Inventory tracking with stock movement history
+- [x] Dev Tools user administration for account lookup, role changes, password resets, and test support
+- [x] Task management: create, assign, reprioritize, transition, report on, and close tasks
+- [x] Task notification event logging for future delivery channels
+- [x] Unit and e2e testing with isolated test data
+- [x] CI/CD and deployment to Vercel
 
 Current priority:
 
-- Check-in workflows (code generation, manual and guided flows)
+- Check-in workflows: code generation, manual flows, and guided front-desk support
 - Smoothing remaining staff/admin operational controls
+- Keeping documentation aligned with the working product
 
 ## Delivery roadmap
 
 ### Phase 0: Foundation
 
-This phase focuses on putting the bones of the app in place:
+This phase focused on putting the bones of the app in place:
 
 - Basic app shell and navigation
 - Sign-in flow foundation
@@ -61,7 +66,7 @@ This phase focuses on putting the bones of the app in place:
 
 ### Phase 1: Access and events
 
-This phase focuses on the first meaningful product loop:
+This phase focused on the first meaningful product loop:
 
 - Profiles and roles
 - Event listings and detail views
@@ -69,32 +74,34 @@ This phase focuses on the first meaningful product loop:
 - Early admin event management
 - Dashboard and event experience for signed-in users
 
-**Implemented in this phase:**
+Implemented in this phase:
 
-- `/events` — filterable event listing (All / Upcoming / Past) via `?filter=` query param
-- `/events/[slug]` — event detail page with live registration count and status display
-- `/events/[slug]/register` — dedicated multi-section registration form (mirroring the COCM Jotform structure) with capacity-aware status assignment and JSON payload storage
-- `/dashboard` — personal dashboard showing the user's active registrations with colour-coded status
-- `/admin/events/[id]/registrations` — staff/admin attendee roster grouped by registration status
-- `lib/events/registration-utils.ts` — pure utility functions for capacity calculation, waitlist promotion, payload serialisation, and attendee grouping
-- `tests/events.test.ts` — 32 automated unit tests covering all events logic (capacity, waitlist, form payload, admin grouping, filter classification)
+- `/events` - filterable event listing (All / Upcoming / Past) via `?filter=` query param
+- `/events/[slug]` - event detail page with live registration count and status display
+- `/events/[slug]/register` - dedicated multi-section registration form with capacity-aware status assignment and JSON payload storage
+- `/dashboard` - personal dashboard with weekly calendar, registration events, editable personal events, invitees, notes, and online or physical locations
+- `/admin/events/[id]/registrations` - staff/admin attendee roster grouped by registration status
+- `lib/events/registration-utils.ts` - pure utility functions for capacity calculation, waitlist promotion, payload serialisation, and attendee grouping
+- `tests/events.test.ts` - automated unit tests covering events logic
 
 ### Phase 2: Tasks and check-in
 
 This phase adds the operational tools the team will use during real events:
 
-- ✅ Task workflows — full lifecycle (Draft → Open → In Progress → Blocked → Done / Cancelled)
-- ✅ Task CRUD — create, edit, delete with staff authorization
-- ✅ Task assignment — assign/reassign to any profile, with staff-only controls
-- ✅ Task reprioritization — low / medium / high / urgent
-- ✅ Status transitions — validated state machine with DB constraints and app-level guards
-- ✅ Admin & staff task management UI — list view with filters, detail view with inline editing
-- ✅ Inventory operations — add, remove, and audit stock actions with e2e coverage
-- ✅ Account operations — sign-up, profile landing, and role-change e2e coverage
-- ✅ Dev Tools user directory — admin account lookup, role changes, password reset, and removal support
-- Check-in code generation
-- Manual and guided check-in flows
-- Staff and admin operational controls (remaining items)
+- [x] Task workflows: full lifecycle (Draft -> Open -> In Progress -> Blocked -> Done / Cancelled)
+- [x] Task CRUD: create, edit, delete with staff authorization
+- [x] Task assignment: assign/reassign to any profile, with staff-only controls
+- [x] Task reprioritization: low / medium / high / urgent
+- [x] Status transitions: validated state machine with DB constraints and app-level guards
+- [x] Admin & staff task management UI: list view with filters, detail view with inline editing
+- [x] Task reporting view for operational summaries
+- [x] Dashboard calendar: create/edit personal events with invitees, notes, and online or physical locations
+- [x] Inventory operations: add, remove, and audit stock actions with e2e coverage
+- [x] Account operations: sign-up, profile landing, and role-change e2e coverage
+- [x] Dev Tools user directory: admin account lookup, role changes, password reset, and removal support
+- [ ] Check-in code generation
+- [ ] Manual and guided check-in flows
+- [ ] Staff and admin operational controls for live check-in
 
 ### Phase 3: Chat foundation
 
@@ -145,10 +152,10 @@ When contributing, it helps to anchor work to one of the current phases so the r
 
 Common local commands:
 
-- `pnpm lint` — run ESLint and Prettier checks
-- `pnpm typecheck` — run TypeScript checks
-- `pnpm test` — run unit tests with Vitest
-- `pnpm test:e2e` — run Playwright browser tests
+- `pnpm lint` - run ESLint and Prettier checks
+- `pnpm typecheck` - run TypeScript checks
+- `pnpm test` - run unit tests with Vitest
+- `pnpm test:e2e` - run Playwright browser tests
 
 E2E tests are intentionally isolated from production data. Local and CI browser tests use `E2E_SUPABASE_URL`, `E2E_SUPABASE_ANON_KEY`, and `E2E_SUPABASE_SERVICE_ROLE_KEY`; when those values are absent, Playwright skips the data-backed e2e suite rather than falling back to production Supabase credentials. See `docs/environment-strategy.md` for the current production/test environment setup.
 
@@ -176,4 +183,4 @@ This project is on track when:
 
 ## Project snapshot
 
-We are building a camp and event operations app in phases. The foundation (auth, permissions, events, registrations, inventory, tasks, admin/dev account tooling, CI, and isolated e2e testing) is complete enough to support real workflow hardening. The next milestone is check-in workflows.
+We are building a camp and event operations app in phases. The foundation (auth, permissions, events, registrations, dashboard calendar, inventory, tasks, admin/dev account tooling, CI, and isolated e2e testing) is complete enough to support real workflow hardening. The next milestone is check-in workflows.

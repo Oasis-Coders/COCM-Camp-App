@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { startTransition, useMemo, useState } from 'react';
 
-import { createPersonalCalendarEvent } from './calendar-actions';
+import { createPersonalCalendarEvent, updatePersonalCalendarEvent } from './calendar-actions';
 
 export type CalendarProfile = {
   id: string;
@@ -14,8 +14,13 @@ export type CalendarProfile = {
 
 export type CalendarItem = {
   id: string;
+  sourceId?: string;
+  ownerProfileId?: string;
   title: string;
+  locationType?: 'physical' | 'online';
   location?: string | null;
+  notes?: string | null;
+  inviteeProfileIds?: string[];
   startsAt: string;
   endsAt: string;
   kind: 'event' | 'personal';
@@ -29,9 +34,16 @@ type Selection = {
   endSlot: number;
 };
 
-type DraftEvent = {
+type CalendarEventFormState = {
+  mode: 'create' | 'edit';
+  id?: string;
+  title: string;
   startsAt: Date;
   endsAt: Date;
+  locationType: 'physical' | 'online';
+  location: string;
+  notes: string;
+  inviteeProfileIds: string[];
 };
 
 const dayFormatter = new Intl.DateTimeFormat('en-GB', { weekday: 'short' });
@@ -106,16 +118,22 @@ function buildDashboardHref(week: Date, profileId: string) {
   return `/dashboard?week=${toDateInputValue(week)}&profile=${profileId}`;
 }
 
+function getSelectedOptions(select: HTMLSelectElement) {
+  return Array.from(select.selectedOptions, (option) => option.value);
+}
+
 export function DashboardCalendar({
   currentProfileId,
   selectedProfileId,
   profiles,
+  inviteeProfiles,
   items,
   weekStart,
 }: {
   currentProfileId: string;
   selectedProfileId: string;
   profiles: CalendarProfile[];
+  inviteeProfiles: CalendarProfile[];
   items: CalendarItem[];
   weekStart: string;
 }) {
@@ -125,9 +143,12 @@ export function DashboardCalendar({
     () => Array.from({ length: dayCount }, (_, index) => addDays(weekStartDate, index)),
     [weekStartDate]
   );
+  const inviteeOptions = useMemo(
+    () => inviteeProfiles.filter((profile) => profile.id !== currentProfileId),
+    [currentProfileId, inviteeProfiles]
+  );
   const [selection, setSelection] = useState<Selection | null>(null);
-  const [draftEvent, setDraftEvent] = useState<DraftEvent | null>(null);
-  const [draftTitle, setDraftTitle] = useState('Personal event');
+  const [eventForm, setEventForm] = useState<CalendarEventFormState | null>(null);
   const [dragging, setDragging] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -176,65 +197,110 @@ export function DashboardCalendar({
     const startsAt = slotToDate(weekStartDate, selection.dayIndex, firstSlot);
     const endsAt = slotToDate(weekStartDate, selection.dayIndex, lastSlot + 1);
     setSelection(null);
-    setDraftEvent({ startsAt, endsAt });
-    setDraftTitle('Personal event');
+    setEventForm({
+      mode: 'create',
+      title: 'Personal event',
+      startsAt,
+      endsAt,
+      locationType: 'physical',
+      location: '',
+      notes: '',
+      inviteeProfileIds: [],
+    });
   }
 
-  function createDraftEvent() {
-    if (!draftEvent) {
+  function openEditEvent(item: CalendarItem) {
+    if (
+      !canEdit ||
+      item.kind !== 'personal' ||
+      !item.sourceId ||
+      item.ownerProfileId !== currentProfileId ||
+      pending
+    ) {
       return;
     }
 
+    setMessage(null);
+    setEventForm({
+      mode: 'edit',
+      id: item.sourceId,
+      title: item.title,
+      startsAt: new Date(item.startsAt),
+      endsAt: new Date(item.endsAt),
+      locationType: item.locationType ?? 'physical',
+      location: item.location ?? '',
+      notes: item.notes ?? '',
+      inviteeProfileIds: item.inviteeProfileIds ?? [],
+    });
+  }
+
+  function updateEventForm(patch: Partial<CalendarEventFormState>) {
+    setEventForm((current) => (current ? { ...current, ...patch } : current));
+  }
+
+  function saveEventForm() {
+    if (!eventForm) {
+      return;
+    }
+
+    const payload = {
+      title: eventForm.title,
+      startsAt: eventForm.startsAt.toISOString(),
+      endsAt: eventForm.endsAt.toISOString(),
+      locationType: eventForm.locationType,
+      location: eventForm.location,
+      notes: eventForm.notes,
+      inviteeProfileIds: eventForm.inviteeProfileIds,
+    };
+
     setPending(true);
     startTransition(async () => {
-      const result = await createPersonalCalendarEvent({
-        title: draftTitle,
-        startsAt: draftEvent.startsAt.toISOString(),
-        endsAt: draftEvent.endsAt.toISOString(),
-      });
+      const result =
+        eventForm.mode === 'edit' && eventForm.id
+          ? await updatePersonalCalendarEvent({ ...payload, id: eventForm.id })
+          : await createPersonalCalendarEvent(payload);
       setMessage(result.message);
       setPending(false);
 
       if (result.status === 'success') {
-        setDraftEvent(null);
+        setEventForm(null);
         router.refresh();
       }
     });
   }
 
-  function updateDraftDate(value: string) {
-    if (!draftEvent) {
+  function updateFormDate(value: string) {
+    if (!eventForm) {
       return;
     }
 
-    setDraftEvent({
-      startsAt: buildLocalDateTime(value, toTimeInputValue(draftEvent.startsAt)),
-      endsAt: buildLocalDateTime(value, toTimeInputValue(draftEvent.endsAt)),
+    updateEventForm({
+      startsAt: buildLocalDateTime(value, toTimeInputValue(eventForm.startsAt)),
+      endsAt: buildLocalDateTime(value, toTimeInputValue(eventForm.endsAt)),
     });
   }
 
-  function updateDraftStartTime(value: string) {
-    if (!draftEvent) {
+  function updateFormStartTime(value: string) {
+    if (!eventForm) {
       return;
     }
 
-    const startsAt = buildLocalDateTime(toDateInputValue(draftEvent.startsAt), value);
+    const startsAt = buildLocalDateTime(toDateInputValue(eventForm.startsAt), value);
     const endsAt =
-      draftEvent.endsAt > startsAt
-        ? draftEvent.endsAt
+      eventForm.endsAt > startsAt
+        ? eventForm.endsAt
         : new Date(startsAt.getTime() + slotMinutes * 60_000);
 
-    setDraftEvent({ startsAt, endsAt });
+    updateEventForm({ startsAt, endsAt });
   }
 
-  function updateDraftEndTime(value: string) {
-    if (!draftEvent) {
+  function updateFormEndTime(value: string) {
+    if (!eventForm) {
       return;
     }
 
-    setDraftEvent({
-      startsAt: draftEvent.startsAt,
-      endsAt: buildLocalDateTime(toDateInputValue(draftEvent.startsAt), value),
+    updateEventForm({
+      endsAt: buildLocalDateTime(toDateInputValue(eventForm.startsAt), value),
     });
   }
 
@@ -248,8 +314,8 @@ export function DashboardCalendar({
           </h2>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
             {canEdit
-              ? 'Tap or drag across a time window to add a personal event.'
-              : 'Viewing another user’s calendar. Event creation is disabled in this view.'}
+              ? 'Tap or drag across a time window to add a personal event. Select an event to edit it.'
+              : "Viewing another user's calendar. Event creation is disabled in this view."}
           </p>
         </div>
 
@@ -276,13 +342,13 @@ export function DashboardCalendar({
               href={buildDashboardHref(previousWeek, selectedProfileId)}
               className="rounded-2xl border border-camp-forest/10 bg-camp-sand/45 px-4 py-3 text-center text-sm font-semibold text-camp-forest transition hover:bg-camp-sand"
             >
-              ← Previous
+              Previous
             </Link>
             <Link
               href={buildDashboardHref(nextWeek, selectedProfileId)}
               className="rounded-2xl bg-camp-forest px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-camp-moss"
             >
-              Next →
+              Next
             </Link>
           </div>
         </div>
@@ -388,32 +454,65 @@ export function DashboardCalendar({
                       return null;
                     }
 
+                    const itemClassName = `absolute left-2 right-2 z-10 overflow-hidden rounded-2xl border px-3 py-2 text-left text-xs shadow-sm transition ${
+                      item.kind === 'event'
+                        ? 'border-camp-forest/15 bg-camp-forest text-white'
+                        : 'border-camp-moss/20 bg-camp-sky text-camp-forest'
+                    } ${
+                      item.kind === 'personal' &&
+                      canEdit &&
+                      item.ownerProfileId === currentProfileId
+                        ? 'hover:border-camp-forest/35 hover:bg-white'
+                        : ''
+                    }`;
+                    const itemStyle = {
+                      top: `${layout.top}%`,
+                      height: `${layout.height}%`,
+                    };
                     const content = (
-                      <div
-                        className={`absolute left-2 right-2 z-10 overflow-hidden rounded-2xl border px-3 py-2 text-xs shadow-sm ${
-                          item.kind === 'event'
-                            ? 'border-camp-forest/15 bg-camp-forest text-white'
-                            : 'border-camp-moss/20 bg-camp-sky text-camp-forest'
-                        }`}
-                        style={{ top: `${layout.top}%`, height: `${layout.height}%` }}
-                      >
+                      <>
                         <p className="font-semibold">{item.title}</p>
                         <p className="mt-1 opacity-85">
-                          {timeFormatter.format(new Date(item.startsAt))}–
+                          {timeFormatter.format(new Date(item.startsAt))}-
                           {timeFormatter.format(new Date(item.endsAt))}
                         </p>
                         {item.location ? (
                           <p className="mt-1 truncate opacity-80">{item.location}</p>
                         ) : null}
-                      </div>
+                      </>
                     );
 
+                    if (item.kind === 'personal') {
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          disabled={
+                            !canEdit || item.ownerProfileId !== currentProfileId || pending
+                          }
+                          className={itemClassName}
+                          style={itemStyle}
+                          onPointerDown={(event) => event.stopPropagation()}
+                          onClick={() => openEditEvent(item)}
+                        >
+                          {content}
+                        </button>
+                      );
+                    }
+
                     return item.href ? (
-                      <Link key={item.id} href={item.href}>
+                      <Link
+                        key={item.id}
+                        href={item.href}
+                        className={itemClassName}
+                        style={itemStyle}
+                      >
                         {content}
                       </Link>
                     ) : (
-                      <div key={item.id}>{content}</div>
+                      <div key={item.id} className={itemClassName} style={itemStyle}>
+                        {content}
+                      </div>
                     );
                   })}
               </div>
@@ -428,46 +527,50 @@ export function DashboardCalendar({
         </div>
       ) : null}
 
-      {draftEvent ? (
+      {eventForm ? (
         <div
-          className="fixed inset-0 z-50 grid place-items-center bg-camp-forest/35 px-4 py-8 backdrop-blur-sm"
+          className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-camp-forest/35 px-4 py-8 backdrop-blur-sm"
           role="dialog"
           aria-modal="true"
           aria-labelledby="calendar-event-modal-title"
           onMouseDown={(event) => {
             if (event.target === event.currentTarget && !pending) {
-              setDraftEvent(null);
+              setEventForm(null);
             }
           }}
         >
           <form
             onSubmit={(event) => {
               event.preventDefault();
-              createDraftEvent();
+              saveEventForm();
             }}
-            className="w-full max-w-xl rounded-[32px] border border-camp-forest/10 bg-white p-6 shadow-panel"
+            className="w-full max-w-2xl rounded-[32px] border border-camp-forest/10 bg-white p-6 shadow-panel"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
-                <p className="text-xs uppercase tracking-[0.28em] text-camp-moss">New event</p>
+                <p className="text-xs uppercase tracking-[0.28em] text-camp-moss">
+                  {eventForm.mode === 'edit' ? 'Edit event' : 'New event'}
+                </p>
                 <h3
                   id="calendar-event-modal-title"
                   className="mt-2 font-serif text-3xl text-camp-forest"
                 >
-                  Create calendar event
+                  {eventForm.mode === 'edit'
+                    ? 'Edit calendar event'
+                    : 'Create calendar event'}
                 </h3>
                 <p className="mt-2 text-sm text-slate-600">
-                  Fine-tune the title, date, and time before adding it to your calendar.
+                  Add the timing, invitees, notes, and where everyone should meet.
                 </p>
               </div>
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => setDraftEvent(null)}
+                onClick={() => setEventForm(null)}
                 className="rounded-full border border-camp-forest/10 px-3 py-1 text-sm font-semibold text-camp-forest transition hover:bg-camp-sand/40 disabled:cursor-wait disabled:opacity-70"
                 aria-label="Close event modal"
               >
-                ×
+                x
               </button>
             </div>
 
@@ -475,8 +578,8 @@ export function DashboardCalendar({
               <label className="text-sm font-semibold text-camp-forest">
                 Title
                 <input
-                  value={draftTitle}
-                  onChange={(event) => setDraftTitle(event.target.value)}
+                  value={eventForm.title}
+                  onChange={(event) => updateEventForm({ title: event.target.value })}
                   autoFocus
                   className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
                 />
@@ -487,8 +590,8 @@ export function DashboardCalendar({
                   Date
                   <input
                     type="date"
-                    value={toDateInputValue(draftEvent.startsAt)}
-                    onChange={(event) => updateDraftDate(event.target.value)}
+                    value={toDateInputValue(eventForm.startsAt)}
+                    onChange={(event) => updateFormDate(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
                   />
                 </label>
@@ -497,8 +600,8 @@ export function DashboardCalendar({
                   <input
                     type="time"
                     step={slotMinutes * 60}
-                    value={toTimeInputValue(draftEvent.startsAt)}
-                    onChange={(event) => updateDraftStartTime(event.target.value)}
+                    value={toTimeInputValue(eventForm.startsAt)}
+                    onChange={(event) => updateFormStartTime(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
                   />
                 </label>
@@ -507,17 +610,79 @@ export function DashboardCalendar({
                   <input
                     type="time"
                     step={slotMinutes * 60}
-                    value={toTimeInputValue(draftEvent.endsAt)}
-                    onChange={(event) => updateDraftEndTime(event.target.value)}
+                    value={toTimeInputValue(eventForm.endsAt)}
+                    onChange={(event) => updateFormEndTime(event.target.value)}
                     className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
                   />
                 </label>
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-[180px_1fr]">
+                <label className="text-sm font-semibold text-camp-forest">
+                  Location type
+                  <select
+                    value={eventForm.locationType}
+                    onChange={(event) =>
+                      updateEventForm({
+                        locationType: event.target.value === 'online' ? 'online' : 'physical',
+                      })
+                    }
+                    className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
+                  >
+                    <option value="physical">Location</option>
+                    <option value="online">Online</option>
+                  </select>
+                </label>
+                <label className="text-sm font-semibold text-camp-forest">
+                  {eventForm.locationType === 'online' ? 'Zoom link' : 'Location name'}
+                  <input
+                    value={eventForm.location}
+                    onChange={(event) => updateEventForm({ location: event.target.value })}
+                    placeholder={
+                      eventForm.locationType === 'online'
+                        ? 'https://zoom.us/j/...'
+                        : 'North Hall'
+                    }
+                    className="mt-2 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
+                  />
+                </label>
+              </div>
+
+              <label className="text-sm font-semibold text-camp-forest">
+                Invitees
+                <select
+                  multiple
+                  value={eventForm.inviteeProfileIds}
+                  onChange={(event) =>
+                    updateEventForm({ inviteeProfileIds: getSelectedOptions(event.currentTarget) })
+                  }
+                  className="mt-2 h-36 w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
+                >
+                  {inviteeOptions.map((profile) => (
+                    <option key={profile.id} value={profile.id}>
+                      {profile.displayName} - {profile.email}
+                    </option>
+                  ))}
+                </select>
+                <span className="mt-2 block text-xs font-normal text-slate-500">
+                  Hold Ctrl or Shift to choose more than one person.
+                </span>
+              </label>
+
+              <label className="text-sm font-semibold text-camp-forest">
+                Notes
+                <textarea
+                  value={eventForm.notes}
+                  onChange={(event) => updateEventForm({ notes: event.target.value })}
+                  rows={4}
+                  className="mt-2 w-full resize-y rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm font-normal text-slate-900 outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky"
+                />
+              </label>
+
               <p className="rounded-2xl bg-camp-sky/55 px-4 py-3 text-sm text-camp-forest">
-                {dateFormatter.format(draftEvent.startsAt)} ·{' '}
-                {timeFormatter.format(draftEvent.startsAt)}–
-                {timeFormatter.format(draftEvent.endsAt)}
+                {dateFormatter.format(eventForm.startsAt)} |{' '}
+                {timeFormatter.format(eventForm.startsAt)}-
+                {timeFormatter.format(eventForm.endsAt)}
               </p>
             </div>
 
@@ -525,7 +690,7 @@ export function DashboardCalendar({
               <button
                 type="button"
                 disabled={pending}
-                onClick={() => setDraftEvent(null)}
+                onClick={() => setEventForm(null)}
                 className="rounded-2xl border border-camp-forest/10 bg-white px-5 py-3 text-sm font-semibold text-camp-forest transition hover:bg-camp-sand/40 disabled:cursor-wait disabled:opacity-70"
               >
                 Cancel
@@ -535,7 +700,13 @@ export function DashboardCalendar({
                 disabled={pending}
                 className="rounded-2xl bg-camp-forest px-5 py-3 text-sm font-semibold text-white transition hover:bg-camp-moss disabled:cursor-wait disabled:opacity-70"
               >
-                {pending ? 'Creating...' : 'Create event'}
+                {pending
+                  ? eventForm.mode === 'edit'
+                    ? 'Saving...'
+                    : 'Creating...'
+                  : eventForm.mode === 'edit'
+                    ? 'Save changes'
+                    : 'Create event'}
               </button>
             </div>
           </form>
