@@ -2,6 +2,7 @@ import { AppShell } from '@/components/layout/app-shell';
 import { MetricCard } from '@/components/layout/metric-card';
 import { staffPrivilegedRoles } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
+import { logServerError } from '@/lib/observability/logger';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
@@ -52,14 +53,14 @@ type PersonalEventRow = {
   location_type: 'physical' | 'online' | null;
   location: string | null;
   notes: string | null;
-  personal_calendar_event_invitees?: { invitee_profile_id: string }[];
+  personal_calendar_event_invitees?: {
+    invitee_profile_id: string;
+    invite_status: 'pending' | 'accepted' | 'declined' | null;
+  }[];
 };
 
 type InviteeEventRow = {
-  event:
-    | PersonalEventRow
-    | PersonalEventRow[]
-    | null;
+  event: PersonalEventRow | PersonalEventRow[] | null;
 };
 
 function getWeekStart(input?: string) {
@@ -163,6 +164,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       : currentProfile?.id;
 
   let calendarItems: CalendarItem[] = [];
+  let calendarLoadMessage: string | null = null;
 
   if (selectedProfileId) {
     const [registrationsResult, personalEventsResult, invitedEventsResult] = await Promise.all([
@@ -199,7 +201,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           location,
           notes,
           personal_calendar_event_invitees (
-            invitee_profile_id
+            invitee_profile_id,
+            invite_status
           )
         `
         )
@@ -220,7 +223,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             location,
             notes,
             personal_calendar_event_invitees (
-              invitee_profile_id
+              invitee_profile_id,
+              invite_status
             )
           )
         `
@@ -251,6 +255,34 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       ];
     });
 
+    if (registrationsResult.error) {
+      logServerError({
+        scope: 'dashboard.load_event_registrations',
+        message: 'Error loading event registrations for dashboard calendar',
+        error: registrationsResult.error,
+        context: {
+          selectedProfileId,
+          weekStart: weekStart.toISOString(),
+          weekEnd: weekEnd.toISOString(),
+        },
+      });
+    }
+
+    if (personalEventsResult.error || invitedEventsResult.error) {
+      logServerError({
+        scope: 'dashboard.load_personal_calendar_events',
+        message: 'Error loading personal dashboard calendar events',
+        error: personalEventsResult.error ?? invitedEventsResult.error,
+        context: {
+          selectedProfileId,
+          weekStart: weekStart.toISOString(),
+          weekEnd: weekEnd.toISOString(),
+        },
+      });
+      calendarLoadMessage =
+        'Personal calendar events could not be loaded. The calendar storage migration may need to run.';
+    }
+
     const ownedPersonalEvents = (personalEventsResult.data ?? []) as PersonalEventRow[];
     const invitedPersonalEvents = ((invitedEventsResult.data ?? []) as InviteeEventRow[])
       .flatMap((row) => {
@@ -261,27 +293,39 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         return Array.isArray(row.event) ? row.event : [row.event];
       })
       .filter(
-        (event) =>
-          new Date(event.starts_at) < weekEnd && new Date(event.ends_at) > weekStart
+        (event) => new Date(event.starts_at) < weekEnd && new Date(event.ends_at) > weekStart
       );
     const personalEventsById = new Map(
       [...ownedPersonalEvents, ...invitedPersonalEvents].map((event) => [event.id, event])
     );
 
-    const personalItems = Array.from(personalEventsById.values()).map((event) => ({
-      id: `personal-${event.id}`,
-      sourceId: event.id,
-      ownerProfileId: event.owner_profile_id,
-      title: event.title,
-      locationType: event.location_type ?? 'physical',
-      location: event.location,
-      notes: event.notes,
-      inviteeProfileIds:
-        event.personal_calendar_event_invitees?.map((invitee) => invitee.invitee_profile_id) ?? [],
-      startsAt: event.starts_at,
-      endsAt: event.ends_at,
-      kind: 'personal' as const,
-    }));
+    const personalItems = Array.from(personalEventsById.values()).map((event) => {
+      const invitees =
+        event.personal_calendar_event_invitees?.map((invitee) => ({
+          profileId: invitee.invitee_profile_id,
+          status: invitee.invite_status ?? ('pending' as const),
+        })) ?? [];
+      const currentInvite = invitees.find((invitee) => invitee.profileId === selectedProfileId);
+      const isSelectedProfileInvited = event.owner_profile_id !== selectedProfileId;
+
+      return {
+        id: `personal-${event.id}`,
+        sourceId: event.id,
+        ownerProfileId: event.owner_profile_id,
+        title: event.title,
+        locationType: event.location_type ?? 'physical',
+        location: event.location,
+        notes: event.notes,
+        inviteeProfileIds: invitees.map((invitee) => invitee.profileId),
+        invitees,
+        currentInviteStatus: isSelectedProfileInvited
+          ? (currentInvite?.status ?? 'pending')
+          : undefined,
+        startsAt: event.starts_at,
+        endsAt: event.ends_at,
+        kind: 'personal' as const,
+      };
+    });
 
     calendarItems = [...registrationItems, ...personalItems].sort(
       (first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime()
@@ -309,20 +353,27 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       </div>
 
       {currentProfile && selectedProfileId ? (
-        <DashboardCalendar
-          currentProfileId={currentProfile.id}
-          selectedProfileId={selectedProfileId}
-          profiles={profiles.length > 0 ? profiles : [mapProfile(currentProfile)]}
-          inviteeProfiles={
-            inviteeProfiles.length > 0
-              ? inviteeProfiles
-              : profiles.length > 0
-                ? profiles
-                : [mapProfile(currentProfile)]
-          }
-          items={calendarItems}
-          weekStart={toDateInputValue(weekStart)}
-        />
+        <>
+          {calendarLoadMessage ? (
+            <div className="mb-4 rounded-2xl border border-camp-ember/20 bg-camp-ember/10 px-4 py-3 text-sm font-semibold text-camp-forest">
+              {calendarLoadMessage}
+            </div>
+          ) : null}
+          <DashboardCalendar
+            currentProfileId={currentProfile.id}
+            selectedProfileId={selectedProfileId}
+            profiles={profiles.length > 0 ? profiles : [mapProfile(currentProfile)]}
+            inviteeProfiles={
+              inviteeProfiles.length > 0
+                ? inviteeProfiles
+                : profiles.length > 0
+                  ? profiles
+                  : [mapProfile(currentProfile)]
+            }
+            items={calendarItems}
+            weekStart={toDateInputValue(weekStart)}
+          />
+        </>
       ) : (
         <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 text-sm text-slate-600 shadow-panel">
           Your profile needs to finish syncing before the dashboard calendar can load.
