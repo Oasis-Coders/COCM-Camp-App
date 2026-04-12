@@ -45,9 +45,21 @@ type RegistrationRow = {
 
 type PersonalEventRow = {
   id: string;
+  owner_profile_id: string;
   title: string;
   starts_at: string;
   ends_at: string;
+  location_type: 'physical' | 'online' | null;
+  location: string | null;
+  notes: string | null;
+  personal_calendar_event_invitees?: { invitee_profile_id: string }[];
+};
+
+type InviteeEventRow = {
+  event:
+    | PersonalEventRow
+    | PersonalEventRow[]
+    | null;
 };
 
 function getWeekStart(input?: string) {
@@ -131,11 +143,17 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const canInspectOthers = staffPrivilegedRoles.includes(session.role);
   const adminSupabase = canInspectOthers ? createSupabaseAdminClient() : null;
   const readClient = adminSupabase ?? supabase;
+  const directoryClient = adminSupabase ?? createSupabaseAdminClient() ?? readClient;
   const { data: profileRows } = await readClient
     .from('profiles')
     .select('id, display_name, email')
     .order('display_name', { ascending: true });
+  const { data: inviteeProfileRows } = await directoryClient
+    .from('profiles')
+    .select('id, display_name, email')
+    .order('display_name', { ascending: true });
   const profiles = (profileRows ?? []).map(mapProfile);
+  const inviteeProfiles = (inviteeProfileRows ?? profileRows ?? []).map(mapProfile);
   const profileIds = new Set(profiles.map((profile) => profile.id));
   const selectedProfileId =
     params.profile &&
@@ -147,7 +165,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   let calendarItems: CalendarItem[] = [];
 
   if (selectedProfileId) {
-    const [registrationsResult, personalEventsResult] = await Promise.all([
+    const [registrationsResult, personalEventsResult, invitedEventsResult] = await Promise.all([
       readClient
         .from('event_registrations')
         .select(
@@ -170,10 +188,44 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         .lt('events.starts_at', weekEnd.toISOString()),
       readClient
         .from('personal_calendar_events')
-        .select('id, title, starts_at, ends_at')
+        .select(
+          `
+          id,
+          owner_profile_id,
+          title,
+          starts_at,
+          ends_at,
+          location_type,
+          location,
+          notes,
+          personal_calendar_event_invitees (
+            invitee_profile_id
+          )
+        `
+        )
         .eq('owner_profile_id', selectedProfileId)
         .lt('starts_at', weekEnd.toISOString())
         .gt('ends_at', weekStart.toISOString()),
+      readClient
+        .from('personal_calendar_event_invitees')
+        .select(
+          `
+          event:personal_calendar_events!inner (
+            id,
+            owner_profile_id,
+            title,
+            starts_at,
+            ends_at,
+            location_type,
+            location,
+            notes,
+            personal_calendar_event_invitees (
+              invitee_profile_id
+            )
+          )
+        `
+        )
+        .eq('invitee_profile_id', selectedProfileId),
     ]);
 
     const registrationItems: CalendarItem[] = (
@@ -199,15 +251,37 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
       ];
     });
 
-    const personalItems = ((personalEventsResult.data ?? []) as PersonalEventRow[]).map(
-      (event) => ({
-        id: `personal-${event.id}`,
-        title: event.title,
-        startsAt: event.starts_at,
-        endsAt: event.ends_at,
-        kind: 'personal' as const,
+    const ownedPersonalEvents = (personalEventsResult.data ?? []) as PersonalEventRow[];
+    const invitedPersonalEvents = ((invitedEventsResult.data ?? []) as InviteeEventRow[])
+      .flatMap((row) => {
+        if (!row.event) {
+          return [];
+        }
+
+        return Array.isArray(row.event) ? row.event : [row.event];
       })
+      .filter(
+        (event) =>
+          new Date(event.starts_at) < weekEnd && new Date(event.ends_at) > weekStart
+      );
+    const personalEventsById = new Map(
+      [...ownedPersonalEvents, ...invitedPersonalEvents].map((event) => [event.id, event])
     );
+
+    const personalItems = Array.from(personalEventsById.values()).map((event) => ({
+      id: `personal-${event.id}`,
+      sourceId: event.id,
+      ownerProfileId: event.owner_profile_id,
+      title: event.title,
+      locationType: event.location_type ?? 'physical',
+      location: event.location,
+      notes: event.notes,
+      inviteeProfileIds:
+        event.personal_calendar_event_invitees?.map((invitee) => invitee.invitee_profile_id) ?? [],
+      startsAt: event.starts_at,
+      endsAt: event.ends_at,
+      kind: 'personal' as const,
+    }));
 
     calendarItems = [...registrationItems, ...personalItems].sort(
       (first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime()
@@ -239,6 +313,13 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           currentProfileId={currentProfile.id}
           selectedProfileId={selectedProfileId}
           profiles={profiles.length > 0 ? profiles : [mapProfile(currentProfile)]}
+          inviteeProfiles={
+            inviteeProfiles.length > 0
+              ? inviteeProfiles
+              : profiles.length > 0
+                ? profiles
+                : [mapProfile(currentProfile)]
+          }
           items={calendarItems}
           weekStart={toDateInputValue(weekStart)}
         />
