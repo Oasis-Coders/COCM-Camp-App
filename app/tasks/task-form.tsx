@@ -38,8 +38,9 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
 
     startTransition(async () => {
       try {
+        let res;
         if (isEditing && task) {
-          await updateTaskDetails(task.id, {
+          res = await updateTaskDetails(task.id, {
             title: title || undefined,
             description: description || undefined,
             priority: priority || undefined,
@@ -48,7 +49,7 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
             dueAt: dueAt ? new Date(dueAt).toISOString() : null,
           });
         } else {
-          await createTask({
+          res = await createTask({
             title,
             description,
             priority,
@@ -58,7 +59,12 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
             dueAt: dueAt ? new Date(dueAt).toISOString() : undefined,
           });
         }
-        onClose();
+
+        if (res?.error) {
+          setError(res.error);
+        } else {
+          onClose();
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to save task');
       }
