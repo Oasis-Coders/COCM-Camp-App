@@ -41,13 +41,36 @@ async function getCurrentProfileId(
   } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
-  const { data: profile } = await supabase
+  const { data: profile, error } = await supabase
     .from('profiles')
     .select('id')
     .eq('auth_user_id', user.id)
     .single();
 
-  if (!profile) throw new Error('Profile not found');
+  if (!profile) {
+    console.error(`[getCurrentProfileId] Profile not found for auth_user_id: ${user.id}`, error);
+    
+    // Fallback: try to insert a minimal profile if the trigger failed
+    const { data: newProfile, error: insertError } = await supabase
+      .from('profiles')
+      .insert({
+        auth_user_id: user.id,
+        email: user.email,
+        first_name: user.user_metadata?.first_name || 'Participant',
+        last_name: user.user_metadata?.last_name || '',
+      })
+      .select('id')
+      .single();
+
+    if (newProfile) {
+      console.info(`[getCurrentProfileId] Auto-created fallback profile for ${user.email}`);
+      return newProfile.id as string;
+    }
+
+    console.error(`[getCurrentProfileId] Failed to auto-create profile:`, insertError);
+    throw new Error('Profile not found. Please contact support.');
+  }
+
   return profile.id as string;
 }
 
