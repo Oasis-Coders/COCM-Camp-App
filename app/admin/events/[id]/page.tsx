@@ -1,5 +1,7 @@
+import { notFound } from 'next/navigation';
 import { AppShell } from '@/components/layout/app-shell';
-import { EmptyState } from '@/components/layout/empty-state';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { AdminEventForm } from '../event-form';
 
 type AdminEventDetailProps = {
   params: Promise<{
@@ -9,13 +11,20 @@ type AdminEventDetailProps = {
 
 export default async function AdminEventDetailPage({ params }: AdminEventDetailProps) {
   const { id } = await params;
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) return null;
+
+  const { data: event } = await supabase
+    .from('events')
+    .select('id, title, slug, location, starts_at, capacity')
+    .eq('id', id)
+    .single();
+
+  if (!event) return notFound();
 
   return (
-    <AppShell title={`Event ${id}`} eyebrow="Admin detail">
-      <EmptyState
-        title="CRUD screens are intentionally light here"
-        description="This placeholder gives you the route boundary and layout now so event management forms can land cleanly in the next phase."
-      />
+    <AppShell title={`Edit Event`} eyebrow={event.title}>
+      <AdminEventForm event={event} />
     </AppShell>
   );
 }

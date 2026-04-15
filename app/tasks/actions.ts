@@ -48,7 +48,6 @@ async function getCurrentProfileId(
     .single();
 
   if (!profile) {
-    // eslint-disable-next-line no-console
     console.error(`[getCurrentProfileId] Profile not found for auth_user_id: ${user.id}`, error);
 
     // Fallback: try to insert a minimal profile if the trigger failed
@@ -69,7 +68,6 @@ async function getCurrentProfileId(
       return newProfile.id as string;
     }
 
-    // eslint-disable-next-line no-console
     console.error(`[getCurrentProfileId] Failed to auto-create profile:`, insertError);
     throw new Error('Profile not found. Please contact support.');
   }
