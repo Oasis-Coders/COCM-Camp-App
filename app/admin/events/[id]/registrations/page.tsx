@@ -8,13 +8,17 @@ type AdminEventRegistrationsProps = {
   }>;
 };
 
+import { AttendeeRow } from './attendee-row';
+
 // Internal component for listing attendees by status
 function AttendeeList({
+  eventId,
   title,
   attendees,
   count,
   capacity,
 }: {
+  eventId: string;
   title: string;
   attendees: any[];
   count: number;
@@ -31,25 +35,7 @@ function AttendeeList({
         ) : (
           <div className="divide-y divide-slate-200">
             {attendees.map((a: any) => (
-              <div key={a.id} className="p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-semibold text-camp-forest">
-                      {a.profiles.first_name || ''} {a.profiles.last_name || ''}
-                      {!a.profiles.first_name && !a.profiles.last_name && a.profiles.display_name}
-                    </h3>
-                    <p className="text-sm text-slate-500">{a.profiles.email}</p>
-                  </div>
-                  <div className="text-right text-xs text-slate-500">
-                    {new Date(a.registered_at).toLocaleDateString()}
-                  </div>
-                </div>
-                {a.notes && (
-                  <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
-                    <strong>Notes:</strong> {a.notes}
-                  </div>
-                )}
-              </div>
+              <AttendeeRow key={a.id} eventId={eventId} attendee={a} />
             ))}
           </div>
         )}
@@ -101,17 +87,20 @@ export default async function AdminEventRegistrationsPage({
   return (
     <AppShell title={`Registrations`} eyebrow={event.title}>
       <AttendeeList
+        eventId={id}
         title="Registered"
         attendees={grouped.registered}
         count={grouped.registered.length}
         capacity={event.capacity}
       />
       <AttendeeList
+        eventId={id}
         title="Waitlisted"
         attendees={grouped.waitlisted}
         count={grouped.waitlisted.length}
       />
       <AttendeeList
+        eventId={id}
         title="Cancelled"
         attendees={grouped.cancelled}
         count={grouped.cancelled.length}
