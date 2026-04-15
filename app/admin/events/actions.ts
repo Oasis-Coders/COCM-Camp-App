@@ -20,6 +20,7 @@ export async function createEvent(formData: FormData) {
   const slug = formData.get('slug') as string;
   const location = formData.get('location') as string;
   const starts_at = formData.get('starts_at') as string;
+  const ends_at = formData.get('ends_at') as string;
   const capacityStr = formData.get('capacity') as string;
   const capacity = capacityStr ? parseInt(capacityStr, 10) : null;
 
@@ -30,6 +31,7 @@ export async function createEvent(formData: FormData) {
       slug,
       location,
       starts_at,
+      ends_at,
       capacity,
     })
     .select()
@@ -58,6 +60,7 @@ export async function updateEvent(id: string, formData: FormData) {
   const slug = formData.get('slug') as string;
   const location = formData.get('location') as string;
   const starts_at = formData.get('starts_at') as string;
+  const ends_at = formData.get('ends_at') as string;
   const capacityStr = formData.get('capacity') as string;
   const newCapacity = capacityStr ? parseInt(capacityStr, 10) : null;
 
@@ -75,6 +78,7 @@ export async function updateEvent(id: string, formData: FormData) {
       slug,
       location,
       starts_at,
+      ends_at,
       capacity: newCapacity,
     })
     .eq('id', id);

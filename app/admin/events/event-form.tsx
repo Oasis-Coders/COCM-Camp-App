@@ -10,6 +10,7 @@ type Event = {
   slug: string;
   location: string | null;
   starts_at: string;
+  ends_at: string;
   capacity: number | null;
 };
 
@@ -114,6 +115,20 @@ export function AdminEventForm({ event }: EventFormProps) {
             id="starts_at"
             name="starts_at"
             defaultValue={formatDatetimeForInput(event?.starts_at)}
+            required
+            className="w-full rounded-md border border-slate-300 p-2 focus:border-camp-forest focus:outline-none focus:ring-1 focus:ring-camp-forest"
+          />
+        </div>
+
+        <div>
+          <label className="mb-1 block text-sm font-medium text-camp-forest" htmlFor="ends_at">
+            End Date & Time
+          </label>
+          <input
+            type="datetime-local"
+            id="ends_at"
+            name="ends_at"
+            defaultValue={formatDatetimeForInput(event?.ends_at)}
             required
             className="w-full rounded-md border border-slate-300 p-2 focus:border-camp-forest focus:outline-none focus:ring-1 focus:ring-camp-forest"
           />
