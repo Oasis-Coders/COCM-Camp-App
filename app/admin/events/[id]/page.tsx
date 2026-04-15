@@ -16,7 +16,7 @@ export default async function AdminEventDetailPage({ params }: AdminEventDetailP
 
   const { data: event } = await supabase
     .from('events')
-    .select('id, title, slug, location, starts_at, capacity')
+    .select('id, title, slug, location, starts_at, ends_at, capacity')
     .eq('id', id)
     .single();
 
