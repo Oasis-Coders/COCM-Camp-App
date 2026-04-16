@@ -24,21 +24,30 @@ export async function createEvent(formData: FormData) {
   const capacityStr = formData.get('capacity') as string;
   const capacity = capacityStr ? parseInt(capacityStr, 10) : null;
 
+  let startsAtIso = starts_at;
+  let endsAtIso = ends_at;
+  try {
+    if (starts_at) startsAtIso = new Date(starts_at).toISOString();
+    if (ends_at) endsAtIso = new Date(ends_at).toISOString();
+  } catch (e) {
+    return { error: 'Invalid date format provided.' };
+  }
+
   const { data: event, error } = await supabase
     .from('events')
     .insert({
       title,
       slug,
       location,
-      starts_at,
-      ends_at,
+      starts_at: startsAtIso,
+      ends_at: endsAtIso,
       capacity,
     })
     .select()
     .single();
 
   if (error) {
-    throw new Error(`Failed to create event: ${error.message}`);
+    return { error: `Failed to create event: ${error.message}` };
   }
 
   revalidatePath('/admin/events');
@@ -64,6 +73,15 @@ export async function updateEvent(id: string, formData: FormData) {
   const capacityStr = formData.get('capacity') as string;
   const newCapacity = capacityStr ? parseInt(capacityStr, 10) : null;
 
+  let startsAtIso = starts_at;
+  let endsAtIso = ends_at;
+  try {
+    if (starts_at) startsAtIso = new Date(starts_at).toISOString();
+    if (ends_at) endsAtIso = new Date(ends_at).toISOString();
+  } catch (e) {
+    return { error: 'Invalid date format provided.' };
+  }
+
   // Fetch current event to check if capacity is increasing
   const { data: currentEvent } = await supabase
     .from('events')
@@ -77,14 +95,14 @@ export async function updateEvent(id: string, formData: FormData) {
       title,
       slug,
       location,
-      starts_at,
-      ends_at,
+      starts_at: startsAtIso,
+      ends_at: endsAtIso,
       capacity: newCapacity,
     })
     .eq('id', id);
 
   if (error) {
-    throw new Error(`Failed to update event: ${error.message}`);
+    return { error: `Failed to update event: ${error.message}` };
   }
 
   // Handle waitlist auto-promotion logic if capacity has increased or became unlimited
@@ -148,7 +166,7 @@ export async function deleteEvent(id: string) {
   const { error } = await supabase.from('events').delete().eq('id', id);
 
   if (error) {
-    throw new Error(`Failed to delete event: ${error.message}`);
+    return { error: `Failed to delete event: ${error.message}` };
   }
 
   revalidatePath('/admin/events');
