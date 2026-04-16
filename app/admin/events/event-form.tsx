@@ -27,12 +27,23 @@ export function AdminEventForm({ event }: EventFormProps) {
   const handleSubmit = (formData: FormData) => {
     startTransition(async () => {
       try {
+        let res;
         if (isEditing) {
-          await updateEvent(event!.id, formData);
+          res = await updateEvent(event!.id, formData);
         } else {
-          await createEvent(formData);
+          res = await createEvent(formData);
+        }
+
+        if (res?.error) {
+          alert(res.error);
         }
       } catch (error) {
+        if (
+          error instanceof Error &&
+          (error.message === 'NEXT_REDIRECT' || (error as any).digest?.startsWith('NEXT_REDIRECT'))
+        ) {
+          throw error;
+        }
         console.error('Failed to submit event:', error);
         alert(error instanceof Error ? error.message : 'An error occurred');
       }
@@ -43,8 +54,18 @@ export function AdminEventForm({ event }: EventFormProps) {
     if (confirm('Are you sure you want to delete this event? This action cannot be undone.')) {
       startTransition(async () => {
         try {
-          await deleteEvent(event!.id);
+          const res = await deleteEvent(event!.id);
+          if (res?.error) {
+            alert(res.error);
+          }
         } catch (error) {
+          if (
+            error instanceof Error &&
+            (error.message === 'NEXT_REDIRECT' ||
+              (error as any).digest?.startsWith('NEXT_REDIRECT'))
+          ) {
+            throw error;
+          }
           console.error('Failed to delete event:', error);
           alert(error instanceof Error ? error.message : 'An error occurred');
         }
