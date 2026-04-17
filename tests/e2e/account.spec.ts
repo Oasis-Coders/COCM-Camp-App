@@ -95,7 +95,7 @@ test.describe.serial('account e2e', () => {
 
     await expect(
       currentUserRow.getByText(
-        'User role updated successfully. Reload the app if your own navigation should change immediately.'
+        'Role updated to admin. The app will refresh automatically.'
       )
     ).toBeVisible();
     await expect(page).toHaveURL(/\/dev-tools\/users$/);
