@@ -673,7 +673,8 @@ export function DashboardCalendar({
                     isDay ? gridStartDate : weekStartDate,
                     event.target.value,
                     viewMode
-                  )
+                  ),
+                  { scroll: false }
                 );
               }}
               className="w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/70 sm:w-64"
@@ -686,44 +687,41 @@ export function DashboardCalendar({
             </select>
           </label>
 
-          <div className="flex overflow-hidden rounded-2xl border border-camp-forest/10">
+          <div className="flex items-center overflow-hidden rounded-2xl border border-camp-forest/10">
+            <Link
+              href={buildDashboardHref(previousNav, selectedProfileId, viewMode)}
+              scroll={false}
+              className="flex items-center justify-center px-3 py-3 text-camp-forest transition hover:bg-camp-sand/60"
+              aria-label={`Previous ${navLabel}`}
+            >
+              <NavArrowIcon direction="left" />
+            </Link>
             <Link
               href={buildDashboardHref(
                 isDay ? gridStartDate : weekStartDate,
                 selectedProfileId,
                 'day'
               )}
-              className={`px-4 py-3 text-center text-sm font-semibold transition ${
-                isDay
-                  ? 'bg-camp-forest text-white'
-                  : 'bg-camp-sand/45 text-camp-forest hover:bg-camp-sand'
+              scroll={false}
+              className={`border-l border-camp-forest/10 px-4 py-3 text-center text-sm font-semibold transition ${
+                isDay ? 'bg-camp-forest text-white' : 'text-camp-forest hover:bg-camp-sand/60'
               }`}
             >
               Day
             </Link>
             <Link
               href={buildDashboardHref(weekStartDate, selectedProfileId, 'week')}
+              scroll={false}
               className={`border-l border-camp-forest/10 px-4 py-3 text-center text-sm font-semibold transition ${
-                !isDay
-                  ? 'bg-camp-forest text-white'
-                  : 'bg-camp-sand/45 text-camp-forest hover:bg-camp-sand'
+                !isDay ? 'bg-camp-forest text-white' : 'text-camp-forest hover:bg-camp-sand/60'
               }`}
             >
               Week
             </Link>
-          </div>
-
-          <div className="grid grid-cols-2 gap-2">
-            <Link
-              href={buildDashboardHref(previousNav, selectedProfileId, viewMode)}
-              className="inline-flex items-center justify-center rounded-2xl border border-camp-forest/10 bg-camp-sand/45 px-4 py-3 text-center text-sm font-semibold text-camp-forest transition hover:bg-camp-sand"
-              aria-label={`Previous ${navLabel}`}
-            >
-              <NavArrowIcon direction="left" />
-            </Link>
             <Link
               href={buildDashboardHref(nextNav, selectedProfileId, viewMode)}
-              className="inline-flex items-center justify-center rounded-2xl bg-camp-forest px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-camp-moss"
+              scroll={false}
+              className="flex items-center justify-center border-l border-camp-forest/10 px-3 py-3 text-camp-forest transition hover:bg-camp-sand/60"
               aria-label={`Next ${navLabel}`}
             >
               <NavArrowIcon direction="right" />
@@ -758,6 +756,7 @@ export function DashboardCalendar({
                 <Link
                   key={day.toISOString()}
                   href={buildDashboardHref(day, selectedProfileId, 'day')}
+                  scroll={false}
                   className="border-l border-camp-forest/10 px-3 py-4 transition hover:bg-camp-sky/30"
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-camp-moss">
