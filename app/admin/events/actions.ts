@@ -4,8 +4,39 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { staffPrivilegedRoles, type AppRole } from '@/lib/app-config';
 import { pickNextInLine } from '@/lib/events/registration-utils';
 import { calculatePromotionAvailableSpots } from '@/lib/events/admin-utils';
+
+/**
+ * Verifies the calling user is authenticated and has a staff+ role.
+ * Returns the authenticated user object.
+ */
+async function requireStaffUser() {
+  const supabase = await createSupabaseServerClient();
+  if (!supabase) throw new Error('Supabase client unavailable');
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const role = (user.app_metadata?.role as string) ?? 'participant';
+  if (!staffPrivilegedRoles.includes(role as AppRole)) {
+    throw new Error('Insufficient permissions');
+  }
+
+  return user;
+}
+
+/**
+ * Returns the admin (service-role) Supabase client, or throws.
+ */
+function requireAdminClient() {
+  const adminClient = createSupabaseAdminClient();
+  if (!adminClient) throw new Error('Admin client unavailable');
+  return adminClient;
+}
 
 /**
  * Syncs mandatory participant registrations for an event.
@@ -16,13 +47,11 @@ import { calculatePromotionAvailableSpots } from '@/lib/events/admin-utils';
  * - Removed mandatory participants get is_mandatory set to false (their registration stays)
  */
 async function syncMandatoryParticipants(eventId: string, mandatoryProfileIds: string[]) {
-  const adminSupabase = createSupabaseAdminClient();
-  if (!adminSupabase) return;
-
+  const adminClient = requireAdminClient();
   const mandatorySet = new Set(mandatoryProfileIds);
 
   // Fetch existing mandatory registrations for this event
-  const { data: existingMandatory } = await adminSupabase
+  const { data: existingMandatory } = await adminClient
     .from('event_registrations')
     .select('user_id')
     .eq('event_id', eventId)
@@ -36,7 +65,7 @@ async function syncMandatoryParticipants(eventId: string, mandatoryProfileIds: s
 
   // Upsert new mandatory participants — always registered status
   for (const profileId of toAdd) {
-    await adminSupabase.from('event_registrations').upsert(
+    await adminClient.from('event_registrations').upsert(
       {
         event_id: eventId,
         user_id: profileId,
@@ -50,7 +79,7 @@ async function syncMandatoryParticipants(eventId: string, mandatoryProfileIds: s
 
   // Remove mandatory flag from removed participants (keep their registration)
   for (const profileId of toRemove) {
-    await adminSupabase
+    await adminClient
       .from('event_registrations')
       .update({ is_mandatory: false })
       .match({ event_id: eventId, user_id: profileId });
@@ -58,14 +87,8 @@ async function syncMandatoryParticipants(eventId: string, mandatoryProfileIds: s
 }
 
 export async function createEvent(formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) throw new Error('Supabase client unavailable');
-
-  // Validate admin/staff session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  await requireStaffUser();
+  const adminClient = requireAdminClient();
 
   const title = formData.get('title') as string;
   const slug = formData.get('slug') as string;
@@ -88,7 +111,7 @@ export async function createEvent(formData: FormData) {
     return { error: 'Invalid date format provided.' };
   }
 
-  const { data: event, error } = await supabase
+  const { data: event, error } = await adminClient
     .from('events')
     .insert({
       title,
@@ -116,14 +139,8 @@ export async function createEvent(formData: FormData) {
 }
 
 export async function updateEvent(id: string, formData: FormData) {
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) throw new Error('Supabase client unavailable');
-
-  // Validate admin/staff session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
+  await requireStaffUser();
+  const adminClient = requireAdminClient();
 
   const title = formData.get('title') as string;
   const slug = formData.get('slug') as string;
@@ -147,13 +164,13 @@ export async function updateEvent(id: string, formData: FormData) {
   }
 
   // Fetch current event to check if capacity is increasing
-  const { data: currentEvent } = await supabase
+  const { data: currentEvent } = await adminClient
     .from('events')
     .select('capacity')
     .eq('id', id)
     .single();
 
-  const { error } = await supabase
+  const { error } = await adminClient
     .from('events')
     .update({
       title,
@@ -179,14 +196,14 @@ export async function updateEvent(id: string, formData: FormData) {
     (newCapacity === null || newCapacity > currentEvent.capacity)
   ) {
     // Determine how many spots we can fill
-    const { count: registeredCount } = await supabase
+    const { count: registeredCount } = await adminClient
       .from('event_registrations')
       .select('*', { count: 'exact', head: true })
       .eq('event_id', id)
       .eq('status', 'registered');
 
     if (registeredCount !== null && (newCapacity === null || registeredCount < newCapacity)) {
-      const { data: waitlistedUsers } = await supabase
+      const { data: waitlistedUsers } = await adminClient
         .from('event_registrations')
         .select('user_id, registered_at')
         .eq('event_id', id)
@@ -203,7 +220,7 @@ export async function updateEvent(id: string, formData: FormData) {
         let p = 0;
         while (p < spotsToFill && p < waitlistedUsers.length) {
           const nextUser = waitlistedUsers[p];
-          await supabase
+          await adminClient
             .from('event_registrations')
             .update({ status: 'registered' })
             .match({ event_id: id, user_id: nextUser.user_id });
@@ -221,16 +238,10 @@ export async function updateEvent(id: string, formData: FormData) {
 }
 
 export async function deleteEvent(id: string) {
-  const supabase = await createSupabaseServerClient();
-  if (!supabase) throw new Error('Supabase client unavailable');
+  await requireStaffUser();
+  const adminClient = requireAdminClient();
 
-  // Validate admin/staff session
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-  if (!user) throw new Error('Not authenticated');
-
-  const { error } = await supabase.from('events').delete().eq('id', id);
+  const { error } = await adminClient.from('events').delete().eq('id', id);
 
   if (error) {
     return { error: `Failed to delete event: ${error.message}` };

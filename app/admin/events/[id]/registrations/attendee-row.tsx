@@ -1,7 +1,7 @@
 'use client';
 
 import { useTransition } from 'react';
-import { adminForcePromoteWaitlist, adminCancelRegistration } from './actions';
+import { adminForcePromoteWaitlist, adminCancelRegistration, adminManualRegister } from './actions';
 
 export function AttendeeRow({ eventId, attendee }: { eventId: string; attendee: any }) {
   const [isPending, startTransition] = useTransition();
@@ -31,6 +31,18 @@ export function AttendeeRow({ eventId, attendee }: { eventId: string; attendee: 
     }
   };
 
+  const handleReRegister = () => {
+    if (confirm('Re-register this user for the event?')) {
+      startTransition(async () => {
+        try {
+          await adminManualRegister(eventId, attendee.user_id || attendee.profiles?.id);
+        } catch (e: any) {
+          alert('Failed to re-register: ' + e.message);
+        }
+      });
+    }
+  };
+
   let parsedNotes: any = null;
   if (attendee.notes) {
     try {
@@ -49,6 +61,11 @@ export function AttendeeRow({ eventId, attendee }: { eventId: string; attendee: 
             {!attendee.profiles?.first_name &&
               !attendee.profiles?.last_name &&
               attendee.profiles?.display_name}
+            {attendee.is_mandatory && (
+              <span className="ml-2 inline-block rounded-full bg-camp-forest/10 px-2 py-0.5 text-xs font-medium text-camp-forest">
+                Mandatory
+              </span>
+            )}
           </h3>
           <p className="text-sm text-slate-500">{attendee.profiles?.email}</p>
         </div>
@@ -73,6 +90,16 @@ export function AttendeeRow({ eventId, attendee }: { eventId: string; attendee: 
               className="rounded-md border border-red-200 bg-white px-2 py-1 font-medium text-red-600 transition hover:bg-red-50 disabled:opacity-50"
             >
               Cancel
+            </button>
+          )}
+
+          {attendee.status === 'cancelled' && (
+            <button
+              onClick={handleReRegister}
+              disabled={isPending}
+              className="rounded-md border border-camp-forest bg-white px-2 py-1 font-medium text-camp-forest transition hover:bg-camp-forest/5 disabled:opacity-50"
+            >
+              Re-register
             </button>
           )}
         </div>

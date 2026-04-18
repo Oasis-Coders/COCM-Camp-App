@@ -1,6 +1,8 @@
 import { AppShell } from '@/components/layout/app-shell';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { notFound } from 'next/navigation';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { staffPrivilegedRoles, type AppRole } from '@/lib/app-config';
+import { notFound, redirect } from 'next/navigation';
 
 type AdminEventRegistrationsProps = {
   params: Promise<{
@@ -9,6 +11,7 @@ type AdminEventRegistrationsProps = {
 };
 
 import { AttendeeRow } from './attendee-row';
+import { AddParticipantForm } from './add-participant-form';
 
 // Internal component for listing attendees by status
 function AttendeeList({
@@ -48,10 +51,28 @@ export default async function AdminEventRegistrationsPage({
   params,
 }: AdminEventRegistrationsProps) {
   const { id } = await params;
+
+  // Verify user is authenticated and staff+
   const supabase = await createSupabaseServerClient();
   if (!supabase) return null;
 
-  const { data: event } = await supabase
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect('/sign-in');
+  }
+
+  const role = (user.app_metadata?.role as string) ?? 'participant';
+  if (!staffPrivilegedRoles.includes(role as AppRole)) {
+    redirect('/dashboard');
+  }
+
+  // Use admin client for all DB reads to bypass RLS
+  const adminClient = createSupabaseAdminClient();
+  if (!adminClient) return null;
+
+  const { data: event } = await adminClient
     .from('events')
     .select('title, capacity')
     .eq('id', id)
@@ -59,33 +80,53 @@ export default async function AdminEventRegistrationsPage({
 
   if (!event) return notFound();
 
-  const { data: registrations } = await supabase
-    .from('event_registrations')
-    .select(
+  const [{ data: registrations }, { data: profileRows }] = await Promise.all([
+    adminClient
+      .from('event_registrations')
+      .select(
+        `
+        id,
+        user_id,
+        status,
+        notes,
+        is_mandatory,
+        registered_at,
+        profiles (
+          id,
+          first_name,
+          last_name,
+          email,
+          display_name
+        )
       `
-      id,
-      status,
-      notes,
-      registered_at,
-      profiles (
-        first_name,
-        last_name,
-        email,
-        display_name
       )
-    `
-    )
-    .eq('event_id', id)
-    .order('registered_at', { ascending: true });
+      .eq('event_id', id)
+      .order('registered_at', { ascending: true }),
+    adminClient
+      .from('profiles')
+      .select('id, display_name, email')
+      .order('display_name', { ascending: true }),
+  ]);
+
+  const profiles = (profileRows ?? []).map((row: any) => ({
+    id: row.id as string,
+    displayName: (row.display_name as string) ?? (row.email as string)?.split('@')[0] ?? 'User',
+    email: (row.email as string) ?? '',
+  }));
+
+  const existingUserIds = (registrations ?? [])
+    .filter((r: any) => r.status !== 'cancelled')
+    .map((r: any) => r.user_id as string);
 
   const grouped = {
-    registered: registrations?.filter((r) => r.status === 'registered') || [],
-    waitlisted: registrations?.filter((r) => r.status === 'waitlisted') || [],
-    cancelled: registrations?.filter((r) => r.status === 'cancelled') || [],
+    registered: registrations?.filter((r: any) => r.status === 'registered') || [],
+    waitlisted: registrations?.filter((r: any) => r.status === 'waitlisted') || [],
+    cancelled: registrations?.filter((r: any) => r.status === 'cancelled') || [],
   };
 
   return (
     <AppShell title={`Registrations`} eyebrow={event.title}>
+      <AddParticipantForm eventId={id} profiles={profiles} existingUserIds={existingUserIds} />
       <AttendeeList
         eventId={id}
         title="Registered"
