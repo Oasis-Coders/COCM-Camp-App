@@ -1,10 +1,11 @@
 /**
  * app/events/[slug]/registration-button.tsx  (Client Component)
  *
- * Renders one of two states based on the user's current registration status:
+ * Renders one of three states based on the user's current registration status:
  *
- *   1. NOT registered / cancelled  →  A <Link> to /events/[slug]/register (the full form)
- *   2. Already registered / waitlisted  →  A "Cancel Registration" button that
+ *   1. Mandatory attendee  →  Info text (no cancel allowed)
+ *   2. NOT registered / cancelled  →  A <Link> to /events/[slug]/register (the full form)
+ *   3. Already registered / waitlisted  →  A "Cancel Registration" button that
  *      calls the cancelRegistration() server action directly (no page navigation needed)
  *
  * The cancel path optimistically triggers a transition so the button disables
@@ -20,9 +21,15 @@ type RegistrationButtonProps = {
   eventId: string;
   eventSlug: string;
   currentStatus: 'registered' | 'waitlisted' | 'cancelled' | null;
+  isMandatory?: boolean;
 };
 
-export function RegistrationButton({ eventId, eventSlug, currentStatus }: RegistrationButtonProps) {
+export function RegistrationButton({
+  eventId,
+  eventSlug,
+  currentStatus,
+  isMandatory = false,
+}: RegistrationButtonProps) {
   const [isPending, startTransition] = useTransition();
   const isRegistered = currentStatus === 'registered' || currentStatus === 'waitlisted';
 
@@ -31,6 +38,15 @@ export function RegistrationButton({ eventId, eventSlug, currentStatus }: Regist
       await cancelRegistration(eventId);
     });
   };
+
+  // Mandatory attendees cannot cancel their registration
+  if (isMandatory && isRegistered) {
+    return (
+      <div className="w-full rounded-full bg-blue-50 px-6 py-3 text-center text-sm font-semibold text-blue-700">
+        Mandatory — cannot be cancelled
+      </div>
+    );
+  }
 
   if (isRegistered) {
     return (

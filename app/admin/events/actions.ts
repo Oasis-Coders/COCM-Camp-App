@@ -3,8 +3,59 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { pickNextInLine } from '@/lib/events/registration-utils';
 import { calculatePromotionAvailableSpots } from '@/lib/events/admin-utils';
+
+/**
+ * Syncs mandatory participant registrations for an event.
+ * Uses the admin client (service role) to bypass RLS since staff is managing
+ * other users' registrations.
+ *
+ * - New mandatory participants get upserted with is_mandatory=true, status='registered'
+ * - Removed mandatory participants get is_mandatory set to false (their registration stays)
+ */
+async function syncMandatoryParticipants(eventId: string, mandatoryProfileIds: string[]) {
+  const adminSupabase = createSupabaseAdminClient();
+  if (!adminSupabase) return;
+
+  const mandatorySet = new Set(mandatoryProfileIds);
+
+  // Fetch existing mandatory registrations for this event
+  const { data: existingMandatory } = await adminSupabase
+    .from('event_registrations')
+    .select('user_id')
+    .eq('event_id', eventId)
+    .eq('is_mandatory', true);
+
+  const existingMandatoryIds = new Set((existingMandatory ?? []).map((r) => r.user_id as string));
+
+  // Determine who to add and who to remove
+  const toAdd = mandatoryProfileIds.filter((id) => !existingMandatoryIds.has(id));
+  const toRemove = [...existingMandatoryIds].filter((id) => !mandatorySet.has(id));
+
+  // Upsert new mandatory participants — always registered status
+  for (const profileId of toAdd) {
+    await adminSupabase.from('event_registrations').upsert(
+      {
+        event_id: eventId,
+        user_id: profileId,
+        status: 'registered',
+        is_mandatory: true,
+        registered_at: new Date().toISOString(),
+      },
+      { onConflict: 'event_id,user_id' }
+    );
+  }
+
+  // Remove mandatory flag from removed participants (keep their registration)
+  for (const profileId of toRemove) {
+    await adminSupabase
+      .from('event_registrations')
+      .update({ is_mandatory: false })
+      .match({ event_id: eventId, user_id: profileId });
+  }
+}
 
 export async function createEvent(formData: FormData) {
   const supabase = await createSupabaseServerClient();
@@ -23,6 +74,10 @@ export async function createEvent(formData: FormData) {
   const ends_at = formData.get('ends_at') as string;
   const capacityStr = formData.get('capacity') as string;
   const capacity = capacityStr ? parseInt(capacityStr, 10) : null;
+  const mandatoryParticipantsJson = formData.get('mandatory_participants') as string;
+  const mandatoryProfileIds: string[] = mandatoryParticipantsJson
+    ? JSON.parse(mandatoryParticipantsJson)
+    : [];
 
   let startsAtIso = starts_at;
   let endsAtIso = ends_at;
@@ -50,6 +105,11 @@ export async function createEvent(formData: FormData) {
     return { error: `Failed to create event: ${error.message}` };
   }
 
+  // Sync mandatory participants after event creation
+  if (mandatoryProfileIds.length > 0) {
+    await syncMandatoryParticipants(event.id, mandatoryProfileIds);
+  }
+
   revalidatePath('/admin/events');
   revalidatePath('/events');
   redirect(`/admin/events/${event.id}`);
@@ -72,6 +132,10 @@ export async function updateEvent(id: string, formData: FormData) {
   const ends_at = formData.get('ends_at') as string;
   const capacityStr = formData.get('capacity') as string;
   const newCapacity = capacityStr ? parseInt(capacityStr, 10) : null;
+  const mandatoryParticipantsJson = formData.get('mandatory_participants') as string;
+  const mandatoryProfileIds: string[] = mandatoryParticipantsJson
+    ? JSON.parse(mandatoryParticipantsJson)
+    : [];
 
   let startsAtIso = starts_at;
   let endsAtIso = ends_at;
@@ -104,6 +168,9 @@ export async function updateEvent(id: string, formData: FormData) {
   if (error) {
     return { error: `Failed to update event: ${error.message}` };
   }
+
+  // Sync mandatory participants
+  await syncMandatoryParticipants(id, mandatoryProfileIds);
 
   // Handle waitlist auto-promotion logic if capacity has increased or became unlimited
   if (
