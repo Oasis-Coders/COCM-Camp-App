@@ -42,6 +42,8 @@ export type CalendarItem = {
   href?: string;
 };
 
+export type CalendarViewMode = 'week' | 'day';
+
 type Selection = {
   dayIndex: number;
   startSlot: number;
@@ -75,13 +77,17 @@ type PositionedCalendarItem = {
 
 const dayFormatter = new Intl.DateTimeFormat('en-GB', { weekday: 'short' });
 const dateFormatter = new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'short' });
+const fullDateFormatter = new Intl.DateTimeFormat('en-GB', {
+  weekday: 'long',
+  day: 'numeric',
+  month: 'long',
+});
 const timeFormatter = new Intl.DateTimeFormat('en-GB', {
   hour: '2-digit',
   minute: '2-digit',
   hour12: false,
 });
 
-const dayCount = 7;
 const slotMinutes = 30;
 const startHour = 6;
 const endHour = 22;
@@ -110,18 +116,18 @@ function buildLocalDateTime(dateValue: string, timeValue: string) {
   return new Date(`${dateValue}T${timeValue}:00`);
 }
 
-function slotToDate(weekStart: Date, dayIndex: number, slotIndex: number) {
-  const date = addDays(weekStart, dayIndex);
+function slotToDate(gridStart: Date, dayIndex: number, slotIndex: number) {
+  const date = addDays(gridStart, dayIndex);
   date.setHours(startHour, slotIndex * slotMinutes, 0, 0);
   return date;
 }
 
-function getItemLayout(item: CalendarItem, weekStart: Date) {
+function getItemLayout(item: CalendarItem, gridStart: Date, dayCount: number) {
   const startsAt = new Date(item.startsAt);
   const endsAt = new Date(item.endsAt);
   const dayIndex = Math.floor(
     (new Date(startsAt.getFullYear(), startsAt.getMonth(), startsAt.getDate()).getTime() -
-      new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate()).getTime()) /
+      new Date(gridStart.getFullYear(), gridStart.getMonth(), gridStart.getDate()).getTime()) /
       86_400_000
   );
 
@@ -145,12 +151,13 @@ function getItemLayout(item: CalendarItem, weekStart: Date) {
 
 function buildPositionedCalendarItems(
   items: CalendarItem[],
-  weekStartDate: Date
+  gridStartDate: Date,
+  dayCount: number
 ): Map<number, PositionedCalendarItem[]> {
   const dayBuckets = new Map<number, PositionedCalendarItem[]>();
 
   for (const item of items) {
-    const layout = getItemLayout(item, weekStartDate);
+    const layout = getItemLayout(item, gridStartDate, dayCount);
 
     if (!layout) {
       continue;
@@ -235,8 +242,14 @@ function buildPositionedCalendarItems(
   return dayBuckets;
 }
 
-function buildDashboardHref(week: Date, profileId: string) {
-  return `/dashboard?week=${toDateInputValue(week)}&profile=${profileId}`;
+function buildDashboardHref(date: Date, profileId: string, viewMode: CalendarViewMode = 'week') {
+  const dateStr = toDateInputValue(date);
+
+  if (viewMode === 'day') {
+    return `/dashboard?view=day&date=${dateStr}&profile=${profileId}`;
+  }
+
+  return `/dashboard?week=${dateStr}&profile=${profileId}`;
 }
 
 function getInviteStatusLabel(status: CalendarInviteStatus) {
@@ -324,6 +337,8 @@ export function DashboardCalendar({
   inviteeProfiles,
   items,
   weekStart,
+  viewMode = 'week',
+  selectedDate,
 }: {
   currentProfileId: string;
   selectedProfileId: string;
@@ -331,12 +346,20 @@ export function DashboardCalendar({
   inviteeProfiles: CalendarProfile[];
   items: CalendarItem[];
   weekStart: string;
+  viewMode?: CalendarViewMode;
+  selectedDate?: string;
 }) {
   const router = useRouter();
+  const isDay = viewMode === 'day';
+  const activeDayCount = isDay ? 1 : 7;
   const weekStartDate = useMemo(() => new Date(`${weekStart}T00:00:00`), [weekStart]);
+  const gridStartDate = useMemo(
+    () => (isDay && selectedDate ? new Date(`${selectedDate}T00:00:00`) : weekStartDate),
+    [isDay, selectedDate, weekStartDate]
+  );
   const days = useMemo(
-    () => Array.from({ length: dayCount }, (_, index) => addDays(weekStartDate, index)),
-    [weekStartDate]
+    () => Array.from({ length: activeDayCount }, (_, index) => addDays(gridStartDate, index)),
+    [gridStartDate, activeDayCount]
   );
   const inviteeOptions = useMemo(
     () => inviteeProfiles.filter((profile) => profile.id !== currentProfileId),
@@ -351,8 +374,8 @@ export function DashboardCalendar({
   const [pending, setPending] = useState(false);
   const canEdit = selectedProfileId === currentProfileId;
   const selectedProfile = profiles.find((profile) => profile.id === selectedProfileId);
-  const previousWeek = addDays(weekStartDate, -7);
-  const nextWeek = addDays(weekStartDate, 7);
+  const previousNav = isDay ? addDays(gridStartDate, -1) : addDays(weekStartDate, -7);
+  const nextNav = isDay ? addDays(gridStartDate, 1) : addDays(weekStartDate, 7);
   const now = new Date();
   const todayIndex = days.findIndex(
     (day) =>
@@ -368,8 +391,8 @@ export function DashboardCalendar({
     [inviteeProfiles, profiles]
   );
   const positionedItemsByDay = useMemo(
-    () => buildPositionedCalendarItems(items, weekStartDate),
-    [items, weekStartDate]
+    () => buildPositionedCalendarItems(items, gridStartDate, activeDayCount),
+    [items, gridStartDate, activeDayCount]
   );
   const selectedInviteeProfiles = useMemo(
     () =>
@@ -407,6 +430,9 @@ export function DashboardCalendar({
     [eventForm, items]
   );
 
+  const gridCols = isDay ? 'grid-cols-[72px_1fr]' : 'grid-cols-[72px_repeat(7,minmax(120px,1fr))]';
+  const navLabel = isDay ? 'day' : 'week';
+
   function beginSelection(dayIndex: number, slotIndex: number) {
     if (!canEdit || pending) {
       return;
@@ -434,8 +460,8 @@ export function DashboardCalendar({
 
     const firstSlot = Math.min(selection.startSlot, selection.endSlot);
     const lastSlot = Math.max(selection.startSlot, selection.endSlot);
-    const startsAt = slotToDate(weekStartDate, selection.dayIndex, firstSlot);
-    const endsAt = slotToDate(weekStartDate, selection.dayIndex, lastSlot + 1);
+    const startsAt = slotToDate(gridStartDate, selection.dayIndex, firstSlot);
+    const endsAt = slotToDate(gridStartDate, selection.dayIndex, lastSlot + 1);
     setSelection(null);
     setInviteeSearch('');
     setEventForm({
@@ -618,10 +644,17 @@ export function DashboardCalendar({
     <section className="rounded-[32px] border border-camp-forest/10 bg-white/90 p-5 shadow-panel backdrop-blur">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
-          <p className="text-xs uppercase tracking-[0.28em] text-camp-moss">Weekly calendar</p>
+          <p className="text-xs uppercase tracking-[0.28em] text-camp-moss">
+            {isDay ? 'Daily calendar' : 'Weekly calendar'}
+          </p>
           <h2 className="mt-3 font-serif text-3xl text-camp-forest">
             {selectedProfile?.displayName ?? 'Calendar'}
           </h2>
+          {isDay ? (
+            <p className="mt-1 text-sm font-semibold text-camp-moss">
+              {fullDateFormatter.format(gridStartDate)}
+            </p>
+          ) : null}
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
             {canEdit
               ? 'Tap or drag across a time window to add a personal event. Select an event to edit it.'
@@ -635,7 +668,13 @@ export function DashboardCalendar({
             <select
               value={selectedProfileId}
               onChange={(event) => {
-                router.push(buildDashboardHref(weekStartDate, event.target.value));
+                router.push(
+                  buildDashboardHref(
+                    isDay ? gridStartDate : weekStartDate,
+                    event.target.value,
+                    viewMode
+                  )
+                );
               }}
               className="w-full rounded-2xl border border-camp-forest/10 bg-white px-4 py-3 text-sm outline-none transition focus:border-camp-moss focus:ring-2 focus:ring-camp-sky/70 sm:w-64"
             >
@@ -647,18 +686,45 @@ export function DashboardCalendar({
             </select>
           </label>
 
+          <div className="flex overflow-hidden rounded-2xl border border-camp-forest/10">
+            <Link
+              href={buildDashboardHref(
+                isDay ? gridStartDate : weekStartDate,
+                selectedProfileId,
+                'day'
+              )}
+              className={`px-4 py-3 text-center text-sm font-semibold transition ${
+                isDay
+                  ? 'bg-camp-forest text-white'
+                  : 'bg-camp-sand/45 text-camp-forest hover:bg-camp-sand'
+              }`}
+            >
+              Day
+            </Link>
+            <Link
+              href={buildDashboardHref(weekStartDate, selectedProfileId, 'week')}
+              className={`border-l border-camp-forest/10 px-4 py-3 text-center text-sm font-semibold transition ${
+                !isDay
+                  ? 'bg-camp-forest text-white'
+                  : 'bg-camp-sand/45 text-camp-forest hover:bg-camp-sand'
+              }`}
+            >
+              Week
+            </Link>
+          </div>
+
           <div className="grid grid-cols-2 gap-2">
             <Link
-              href={buildDashboardHref(previousWeek, selectedProfileId)}
+              href={buildDashboardHref(previousNav, selectedProfileId, viewMode)}
               className="inline-flex items-center justify-center rounded-2xl border border-camp-forest/10 bg-camp-sand/45 px-4 py-3 text-center text-sm font-semibold text-camp-forest transition hover:bg-camp-sand"
-              aria-label="Previous week"
+              aria-label={`Previous ${navLabel}`}
             >
               <NavArrowIcon direction="left" />
             </Link>
             <Link
-              href={buildDashboardHref(nextWeek, selectedProfileId)}
+              href={buildDashboardHref(nextNav, selectedProfileId, viewMode)}
               className="inline-flex items-center justify-center rounded-2xl bg-camp-forest px-4 py-3 text-center text-sm font-semibold text-white transition hover:bg-camp-moss"
-              aria-label="Next week"
+              aria-label={`Next ${navLabel}`}
             >
               <NavArrowIcon direction="right" />
             </Link>
@@ -673,24 +739,39 @@ export function DashboardCalendar({
       ) : null}
 
       <div className="mt-6 overflow-x-auto rounded-[28px] border border-camp-forest/10 bg-camp-sand/20">
-        <div className="min-w-[920px]">
-          <div className="grid grid-cols-[72px_repeat(7,minmax(120px,1fr))] border-b border-camp-forest/10 bg-white/80">
+        <div className={isDay ? '' : 'min-w-[920px]'}>
+          <div className={`grid ${gridCols} border-b border-camp-forest/10 bg-white/80`}>
             <div className="px-3 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-camp-moss">
               Time
             </div>
-            {days.map((day) => (
-              <div key={day.toISOString()} className="border-l border-camp-forest/10 px-3 py-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-camp-moss">
-                  {dayFormatter.format(day)}
-                </p>
-                <p className="mt-1 font-serif text-xl text-camp-forest">
-                  {dateFormatter.format(day)}
-                </p>
-              </div>
-            ))}
+            {days.map((day) =>
+              isDay ? (
+                <div key={day.toISOString()} className="border-l border-camp-forest/10 px-4 py-4">
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-camp-moss">
+                    {dayFormatter.format(day)}
+                  </p>
+                  <p className="mt-1 font-serif text-xl text-camp-forest">
+                    {dateFormatter.format(day)}
+                  </p>
+                </div>
+              ) : (
+                <Link
+                  key={day.toISOString()}
+                  href={buildDashboardHref(day, selectedProfileId, 'day')}
+                  className="border-l border-camp-forest/10 px-3 py-4 transition hover:bg-camp-sky/30"
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.18em] text-camp-moss">
+                    {dayFormatter.format(day)}
+                  </p>
+                  <p className="mt-1 font-serif text-xl text-camp-forest">
+                    {dateFormatter.format(day)}
+                  </p>
+                </Link>
+              )
+            )}
           </div>
 
-          <div className="grid grid-cols-[72px_repeat(7,minmax(120px,1fr))]">
+          <div className={`grid ${gridCols}`}>
             <div
               className="grid"
               style={{ gridTemplateRows: `repeat(${endHour - startHour}, 72px)` }}
@@ -732,7 +813,7 @@ export function DashboardCalendar({
                         type="button"
                         disabled={!canEdit || pending}
                         aria-label={`Create event on ${dateFormatter.format(day)} at ${timeFormatter.format(
-                          slotToDate(weekStartDate, dayIndex, slotIndex)
+                          slotToDate(gridStartDate, dayIndex, slotIndex)
                         )}`}
                         className={`border-b border-camp-forest/5 transition ${
                           canEdit ? 'cursor-crosshair hover:bg-camp-sky/40' : 'cursor-default'
@@ -851,7 +932,9 @@ export function DashboardCalendar({
 
       {items.length === 0 ? (
         <div className="mt-5 rounded-[24px] border border-dashed border-camp-forest/20 bg-camp-sand/25 p-5 text-sm text-slate-600">
-          No events are scheduled in this week. Use the calendar grid to create one for yourself.
+          {isDay
+            ? 'No events are scheduled for this day. Use the calendar grid to create one for yourself.'
+            : 'No events are scheduled in this week. Use the calendar grid to create one for yourself.'}
         </div>
       ) : null}
 
