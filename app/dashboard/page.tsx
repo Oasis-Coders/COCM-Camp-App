@@ -1,6 +1,6 @@
 import { AppShell } from '@/components/layout/app-shell';
 import { MetricCard } from '@/components/layout/metric-card';
-import { staffPrivilegedRoles } from '@/lib/app-config';
+import { adminPrivilegedRoles } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
 import { logServerError } from '@/lib/observability/logger';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
@@ -165,27 +165,71 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const rangeEnd =
     isDayView && selectedDayDate ? addDays(selectedDayDate, 1) : addDays(weekStart, 7);
 
-  const canInspectOthers = staffPrivilegedRoles.includes(session.role);
+  const isAdmin = adminPrivilegedRoles.includes(session.role);
+  const isStaff = session.role === 'staff';
+  const canInspectOthers = isAdmin || isStaff;
   const adminSupabase = canInspectOthers ? createSupabaseAdminClient() : null;
   const readClient = adminSupabase ?? supabase;
-  const directoryClient = adminSupabase ?? createSupabaseAdminClient() ?? readClient;
-  const { data: profileRows } = await readClient
-    .from('profiles')
-    .select('id, display_name, email')
-    .order('display_name', { ascending: true });
+  const directoryClient = createSupabaseAdminClient() ?? readClient;
+
+  // --- Build the visible-profiles list based on the caller's role ---
+  //   participant  → own profile only
+  //   staff        → staff / admin / super_admin profiles
+  //   admin+       → everyone
+  let profileRows: ProfileRow[] = [];
+
+  if (isAdmin) {
+    const { data } = await directoryClient
+      .from('profiles')
+      .select('id, display_name, email')
+      .order('display_name', { ascending: true });
+    profileRows = data ?? [];
+  } else if (isStaff) {
+    const { data: staffRoles } = await directoryClient
+      .from('roles')
+      .select('id')
+      .in('name', ['staff', 'admin', 'super_admin']);
+    const staffRoleIds = (staffRoles ?? []).map((r: { id: string }) => r.id);
+
+    if (staffRoleIds.length > 0) {
+      const { data: staffUserRoles } = await directoryClient
+        .from('user_roles')
+        .select('user_id')
+        .in('role_id', staffRoleIds);
+      const allowedIds = new Set((staffUserRoles ?? []).map((r: { user_id: string }) => r.user_id));
+
+      // Guarantee the current user always appears even if user_roles is out of
+      // sync with auth metadata.
+      if (currentProfile) {
+        allowedIds.add(currentProfile.id);
+      }
+
+      const { data } = await directoryClient
+        .from('profiles')
+        .select('id, display_name, email')
+        .in('id', [...allowedIds])
+        .order('display_name', { ascending: true });
+      profileRows = data ?? [];
+    } else if (currentProfile) {
+      profileRows = [currentProfile];
+    }
+  } else {
+    // Participant — own calendar only
+    profileRows = currentProfile ? [currentProfile] : [];
+  }
+
+  // inviteeProfiles: always the full directory so anyone can be invited to
+  // personal calendar events regardless of the viewer's role.
   const { data: inviteeProfileRows } = await directoryClient
     .from('profiles')
     .select('id, display_name, email')
     .order('display_name', { ascending: true });
-  const profiles = (profileRows ?? []).map(mapProfile);
+
+  const profiles = profileRows.map(mapProfile);
   const inviteeProfiles = (inviteeProfileRows ?? profileRows ?? []).map(mapProfile);
   const profileIds = new Set(profiles.map((profile) => profile.id));
   const selectedProfileId =
-    params.profile &&
-    profileIds.has(params.profile) &&
-    (canInspectOthers || params.profile === currentProfile?.id)
-      ? params.profile
-      : currentProfile?.id;
+    params.profile && profileIds.has(params.profile) ? params.profile : currentProfile?.id;
 
   let calendarItems: CalendarItem[] = [];
   let calendarLoadMessage: string | null = null;
