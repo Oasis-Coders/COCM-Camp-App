@@ -6,12 +6,19 @@ import { logServerError } from '@/lib/observability/logger';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
-import { DashboardCalendar, type CalendarItem, type CalendarProfile } from './dashboard-calendar';
+import {
+  DashboardCalendar,
+  type CalendarItem,
+  type CalendarProfile,
+  type CalendarViewMode,
+} from './dashboard-calendar';
 
 type DashboardPageProps = {
   searchParams: Promise<{
     week?: string;
     profile?: string;
+    view?: string;
+    date?: string;
   }>;
 };
 
@@ -72,6 +79,15 @@ function getWeekStart(input?: string) {
   weekStart.setDate(weekStart.getDate() + diff);
   weekStart.setHours(0, 0, 0, 0);
   return weekStart;
+}
+
+function getSelectedDate(input?: string) {
+  if (!input) {
+    return new Date();
+  }
+
+  const candidate = new Date(`${input}T00:00:00`);
+  return Number.isNaN(candidate.getTime()) ? new Date() : candidate;
 }
 
 function addDays(date: Date, days: number) {
@@ -139,8 +155,16 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
     currentProfile = data;
   }
 
-  const weekStart = getWeekStart(params.week);
-  const weekEnd = addDays(weekStart, 7);
+  const viewMode: CalendarViewMode = params.view === 'day' ? 'day' : 'week';
+  const isDayView = viewMode === 'day';
+
+  const weekStart = getWeekStart(isDayView ? params.date : params.week);
+  const selectedDayDate = isDayView ? getSelectedDate(params.date) : null;
+
+  const rangeStart = isDayView && selectedDayDate ? selectedDayDate : weekStart;
+  const rangeEnd =
+    isDayView && selectedDayDate ? addDays(selectedDayDate, 1) : addDays(weekStart, 7);
+
   const canInspectOthers = staffPrivilegedRoles.includes(session.role);
   const adminSupabase = canInspectOthers ? createSupabaseAdminClient() : null;
   const readClient = adminSupabase ?? supabase;
@@ -186,8 +210,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         )
         .eq('user_id', selectedProfileId)
         .neq('status', 'cancelled')
-        .gte('events.starts_at', weekStart.toISOString())
-        .lt('events.starts_at', weekEnd.toISOString()),
+        .gte('events.starts_at', rangeStart.toISOString())
+        .lt('events.starts_at', rangeEnd.toISOString()),
       readClient
         .from('personal_calendar_events')
         .select(
@@ -207,8 +231,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         `
         )
         .eq('owner_profile_id', selectedProfileId)
-        .lt('starts_at', weekEnd.toISOString())
-        .gt('ends_at', weekStart.toISOString()),
+        .lt('starts_at', rangeEnd.toISOString())
+        .gt('ends_at', rangeStart.toISOString()),
       readClient
         .from('personal_calendar_event_invitees')
         .select(
@@ -262,8 +286,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         error: registrationsResult.error,
         context: {
           selectedProfileId,
-          weekStart: weekStart.toISOString(),
-          weekEnd: weekEnd.toISOString(),
+          rangeStart: rangeStart.toISOString(),
+          rangeEnd: rangeEnd.toISOString(),
         },
       });
     }
@@ -275,8 +299,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         error: personalEventsResult.error ?? invitedEventsResult.error,
         context: {
           selectedProfileId,
-          weekStart: weekStart.toISOString(),
-          weekEnd: weekEnd.toISOString(),
+          rangeStart: rangeStart.toISOString(),
+          rangeEnd: rangeEnd.toISOString(),
         },
       });
       calendarLoadMessage =
@@ -293,7 +317,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
         return Array.isArray(row.event) ? row.event : [row.event];
       })
       .filter(
-        (event) => new Date(event.starts_at) < weekEnd && new Date(event.ends_at) > weekStart
+        (event) => new Date(event.starts_at) < rangeEnd && new Date(event.ends_at) > rangeStart
       );
     const personalEventsById = new Map(
       [...ownedPersonalEvents, ...invitedPersonalEvents].map((event) => [event.id, event])
@@ -372,6 +396,8 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
             }
             items={calendarItems}
             weekStart={toDateInputValue(weekStart)}
+            viewMode={viewMode}
+            selectedDate={selectedDayDate ? toDateInputValue(selectedDayDate) : undefined}
           />
         </>
       ) : (
