@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { startTransition, useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState } from 'react';
 
 import {
   createPersonalCalendarEvent,
@@ -350,12 +350,24 @@ export function DashboardCalendar({
   selectedDate?: string;
 }) {
   const router = useRouter();
-  const isDay = viewMode === 'day';
+
+  // Client-side view state – avoids router.push for within-week navigation
+  // (which triggers Suspense/loading.tsx and resets scroll position on mobile).
+  const [localViewMode, setLocalViewMode] = useState<CalendarViewMode>(viewMode);
+  const [localSelectedDate, setLocalSelectedDate] = useState(selectedDate);
+
+  // Sync when server provides new data (cross-week nav, profile change)
+  useEffect(() => {
+    setLocalViewMode(viewMode);
+    setLocalSelectedDate(selectedDate);
+  }, [viewMode, selectedDate, weekStart, selectedProfileId]);
+
+  const isDay = localViewMode === 'day';
   const activeDayCount = isDay ? 1 : 7;
   const weekStartDate = useMemo(() => new Date(`${weekStart}T00:00:00`), [weekStart]);
   const gridStartDate = useMemo(
-    () => (isDay && selectedDate ? new Date(`${selectedDate}T00:00:00`) : weekStartDate),
-    [isDay, selectedDate, weekStartDate]
+    () => (isDay && localSelectedDate ? new Date(`${localSelectedDate}T00:00:00`) : weekStartDate),
+    [isDay, localSelectedDate, weekStartDate]
   );
   const days = useMemo(
     () => Array.from({ length: activeDayCount }, (_, index) => addDays(gridStartDate, index)),
@@ -432,6 +444,28 @@ export function DashboardCalendar({
 
   const gridCols = isDay ? 'grid-cols-[72px_1fr]' : 'grid-cols-[72px_repeat(7,minmax(120px,1fr))]';
   const navLabel = isDay ? 'day' : 'week';
+
+  /** Navigate within the calendar. Uses client-side state for same-week
+   *  transitions (no Suspense flash / scroll reset) and falls back to
+   *  router.push when fresh server data is required. */
+  function navigateCalendar(targetDate: Date, targetView: CalendarViewMode) {
+    const weekEnd = addDays(weekStartDate, 7);
+    const inCurrentWeek = targetDate >= weekStartDate && targetDate < weekEnd;
+
+    if (inCurrentWeek) {
+      setLocalViewMode(targetView);
+      setLocalSelectedDate(targetView === 'day' ? toDateInputValue(targetDate) : undefined);
+      window.history.replaceState(
+        null,
+        '',
+        buildDashboardHref(targetDate, selectedProfileId, targetView)
+      );
+    } else {
+      router.push(buildDashboardHref(targetDate, selectedProfileId, targetView), {
+        scroll: false,
+      });
+    }
+  }
 
   function beginSelection(dayIndex: number, slotIndex: number) {
     if (!canEdit || pending) {
@@ -690,11 +724,7 @@ export function DashboardCalendar({
           <div className="mx-auto flex w-fit items-center overflow-hidden rounded-2xl border border-camp-forest/10 sm:mx-0">
             <button
               type="button"
-              onClick={() =>
-                router.push(buildDashboardHref(previousNav, selectedProfileId, viewMode), {
-                  scroll: false,
-                })
-              }
+              onClick={() => navigateCalendar(previousNav, localViewMode)}
               className="flex items-center justify-center px-3 py-3 text-camp-forest transition hover:bg-camp-sand/60"
               aria-label={`Previous ${navLabel}`}
             >
@@ -702,16 +732,7 @@ export function DashboardCalendar({
             </button>
             <button
               type="button"
-              onClick={() =>
-                router.push(
-                  buildDashboardHref(
-                    isDay ? gridStartDate : weekStartDate,
-                    selectedProfileId,
-                    'day'
-                  ),
-                  { scroll: false }
-                )
-              }
+              onClick={() => navigateCalendar(isDay ? gridStartDate : weekStartDate, 'day')}
               className={`border-l border-camp-forest/10 px-5 py-3 text-center text-sm font-semibold transition ${
                 isDay ? 'bg-camp-forest text-white' : 'text-camp-forest hover:bg-camp-sand/60'
               }`}
@@ -720,11 +741,7 @@ export function DashboardCalendar({
             </button>
             <button
               type="button"
-              onClick={() =>
-                router.push(buildDashboardHref(weekStartDate, selectedProfileId, 'week'), {
-                  scroll: false,
-                })
-              }
+              onClick={() => navigateCalendar(weekStartDate, 'week')}
               className={`border-l border-camp-forest/10 px-5 py-3 text-center text-sm font-semibold transition ${
                 !isDay ? 'bg-camp-forest text-white' : 'text-camp-forest hover:bg-camp-sand/60'
               }`}
@@ -733,11 +750,7 @@ export function DashboardCalendar({
             </button>
             <button
               type="button"
-              onClick={() =>
-                router.push(buildDashboardHref(nextNav, selectedProfileId, viewMode), {
-                  scroll: false,
-                })
-              }
+              onClick={() => navigateCalendar(nextNav, localViewMode)}
               className="flex items-center justify-center border-l border-camp-forest/10 px-3 py-3 text-camp-forest transition hover:bg-camp-sand/60"
               aria-label={`Next ${navLabel}`}
             >
@@ -770,11 +783,11 @@ export function DashboardCalendar({
                   </p>
                 </div>
               ) : (
-                <Link
+                <button
                   key={day.toISOString()}
-                  href={buildDashboardHref(day, selectedProfileId, 'day')}
-                  scroll={false}
-                  className="border-l border-camp-forest/10 px-3 py-4 transition hover:bg-camp-sky/30"
+                  type="button"
+                  onClick={() => navigateCalendar(day, 'day')}
+                  className="border-l border-camp-forest/10 px-3 py-4 text-left transition hover:bg-camp-sky/30"
                 >
                   <p className="text-xs font-semibold uppercase tracking-[0.18em] text-camp-moss">
                     {dayFormatter.format(day)}
@@ -782,7 +795,7 @@ export function DashboardCalendar({
                   <p className="mt-1 font-serif text-xl text-camp-forest">
                     {dateFormatter.format(day)}
                   </p>
-                </Link>
+                </button>
               )
             )}
           </div>
