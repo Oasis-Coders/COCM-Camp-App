@@ -46,7 +46,17 @@ export default async function AdminEventsPage() {
             </Link>
           ))
         ) : (
-          <p className="text-sm text-slate-500">No events found.</p>
+          <div className="rounded-[24px] border border-dashed border-camp-forest/10 bg-white/60 p-8 text-center">
+            <p className="text-4xl">📅</p>
+            <p className="mt-3 font-serif text-lg text-camp-forest">No events yet</p>
+            <p className="mt-1 text-sm text-slate-500">Get started by creating your first event.</p>
+            <Link
+              href="/admin/events/new"
+              className="mt-4 inline-block rounded-full bg-camp-forest px-5 py-2 text-sm font-medium text-white transition hover:bg-camp-forest/90"
+            >
+              + Create Event
+            </Link>
+          </div>
         )}
       </div>
     </AppShell>

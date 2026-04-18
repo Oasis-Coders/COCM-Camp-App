@@ -80,7 +80,11 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
       <div className="grid gap-4">
         {(events || []).length === 0 ? (
-          <p className="text-sm text-slate-500">No events found.</p>
+          <div className="rounded-[24px] border border-dashed border-camp-forest/10 bg-white/60 p-8 text-center">
+            <p className="text-4xl">📅</p>
+            <p className="mt-3 font-serif text-lg text-camp-forest">No events yet</p>
+            <p className="mt-1 text-sm text-slate-500">Check back soon for upcoming events.</p>
+          </div>
         ) : (
           (events || []).map((event) => (
             <Link
