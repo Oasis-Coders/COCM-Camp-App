@@ -111,9 +111,7 @@ test.describe.serial('role change e2e', () => {
     await currentUserRow.getByRole('button', { name: 'Save' }).click();
 
     await expect(
-      currentUserRow.getByText(
-        'Role updated to participant. The app will refresh automatically.'
-      )
+      currentUserRow.getByText('Role updated to participant. The app will refresh automatically.')
     ).toBeVisible();
 
     // Navigate to the dashboard and verify restricted nav items are hidden

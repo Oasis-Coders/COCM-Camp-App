@@ -1,6 +1,6 @@
 'use client';
 
-import { useTransition } from 'react';
+import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import { createEvent, updateEvent, deleteEvent } from './actions';
 
@@ -14,17 +14,34 @@ type Event = {
   capacity: number | null;
 };
 
-type EventFormProps = {
-  event?: Event | null; // Provide event to edit, omit to create
+type Profile = {
+  id: string;
+  displayName: string;
+  email: string;
 };
 
-export function AdminEventForm({ event }: EventFormProps) {
+type EventFormProps = {
+  event?: Event | null; // Provide event to edit, omit to create
+  profiles?: Profile[]; // Available profiles for mandatory participant selection
+  mandatoryAttendeeIds?: string[]; // Currently mandatory attendee profile IDs (edit mode)
+};
+
+export function AdminEventForm({
+  event,
+  profiles = [],
+  mandatoryAttendeeIds = [],
+}: EventFormProps) {
   const [isPending, startTransition] = useTransition();
   const router = useRouter();
+  const [selectedMandatory, setSelectedMandatory] = useState<string[]>(mandatoryAttendeeIds);
+  const [searchQuery, setSearchQuery] = useState('');
 
   const isEditing = !!event;
 
   const handleSubmit = (formData: FormData) => {
+    // Inject mandatory participants as JSON into the form data
+    formData.set('mandatory_participants', JSON.stringify(selectedMandatory));
+
     startTransition(async () => {
       try {
         let res;
@@ -73,6 +90,16 @@ export function AdminEventForm({ event }: EventFormProps) {
     }
   };
 
+  const toggleMandatory = (profileId: string) => {
+    setSelectedMandatory((prev) =>
+      prev.includes(profileId) ? prev.filter((id) => id !== profileId) : [...prev, profileId]
+    );
+  };
+
+  const removeMandatory = (profileId: string) => {
+    setSelectedMandatory((prev) => prev.filter((id) => id !== profileId));
+  };
+
   // Fix timezone issue by slicing to YYYY-MM-DDTHH:MM that input[type="datetime-local"] expects
   const formatDatetimeForInput = (isoString?: string) => {
     if (!isoString) return '';
@@ -82,6 +109,17 @@ export function AdminEventForm({ event }: EventFormProps) {
     const localISOTime = new Date(d.getTime() - tzoffset).toISOString().slice(0, -1);
     return localISOTime.slice(0, 16); // "YYYY-MM-DDTHH:MM"
   };
+
+  const filteredProfiles = profiles.filter((profile) => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      profile.displayName.toLowerCase().includes(query) ||
+      profile.email.toLowerCase().includes(query)
+    );
+  });
+
+  const selectedProfiles = profiles.filter((p) => selectedMandatory.includes(p.id));
 
   return (
     <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
@@ -167,6 +205,73 @@ export function AdminEventForm({ event }: EventFormProps) {
             defaultValue={event?.capacity ?? ''}
             className="w-full rounded-md border border-slate-300 p-2 focus:border-camp-forest focus:outline-none focus:ring-1 focus:ring-camp-forest"
           />
+        </div>
+
+        {/* Mandatory Participants Section */}
+        <div>
+          <label className="mb-1 block text-sm font-medium text-camp-forest">
+            Mandatory Participants
+          </label>
+          <p className="mb-2 text-xs text-slate-500">
+            These users will be automatically registered and cannot cancel.
+          </p>
+
+          {/* Selected mandatory participants */}
+          {selectedProfiles.length > 0 && (
+            <div className="mb-2 flex flex-wrap gap-2" data-testid="mandatory-chips">
+              {selectedProfiles.map((profile) => (
+                <span
+                  key={profile.id}
+                  className="inline-flex items-center gap-1 rounded-full bg-camp-forest/10 px-3 py-1 text-xs font-medium text-camp-forest"
+                >
+                  {profile.displayName}
+                  <button
+                    type="button"
+                    onClick={() => removeMandatory(profile.id)}
+                    className="ml-1 text-camp-forest/60 hover:text-camp-forest"
+                    aria-label={`Remove ${profile.displayName}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
+
+          {/* Search and select */}
+          {profiles.length > 0 && (
+            <div>
+              <input
+                type="text"
+                placeholder="Search participants by name or email…"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="mb-2 w-full rounded-md border border-slate-300 p-2 text-sm focus:border-camp-forest focus:outline-none focus:ring-1 focus:ring-camp-forest"
+                data-testid="mandatory-search"
+              />
+              <div className="max-h-40 overflow-y-auto rounded-md border border-slate-200">
+                {filteredProfiles.length > 0 ? (
+                  filteredProfiles.map((profile) => (
+                    <label
+                      key={profile.id}
+                      className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-slate-50"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={selectedMandatory.includes(profile.id)}
+                        onChange={() => toggleMandatory(profile.id)}
+                        className="rounded border-slate-300 text-camp-forest focus:ring-camp-forest"
+                      />
+                      <span className="text-slate-700">{profile.displayName}</span>
+                      <span className="text-xs text-slate-400">{profile.email}</span>
+                    </label>
+                  ))
+                ) : (
+                  <p className="px-3 py-2 text-sm text-slate-400">No matching participants.</p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-4 flex items-center justify-between">

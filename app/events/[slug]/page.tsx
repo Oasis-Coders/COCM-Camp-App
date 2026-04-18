@@ -7,9 +7,11 @@
  *   - Event record (by slug)
  *   - Current user's registration status for this event
  *   - Live registration count (used to display "X / capacity" to the user)
+ *   - Whether the current user is a mandatory attendee
  *
  * The RegistrationButton links authenticated users to /events/[slug]/register.
  * If already registered or waitlisted it renders a Cancel button instead.
+ * Mandatory attendees cannot cancel their registration.
  */
 import { notFound } from 'next/navigation';
 
@@ -47,6 +49,7 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
   } = await supabase.auth.getUser();
 
   let registrationStatus: 'registered' | 'waitlisted' | 'cancelled' | null = null;
+  let isMandatory = false;
 
   if (user) {
     const { data: profile } = await supabase
@@ -58,11 +61,12 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
     if (profile) {
       const { data: registration } = await supabase
         .from('event_registrations')
-        .select('status')
+        .select('status, is_mandatory')
         .match({ event_id: event.id, user_id: profile.id })
         .maybeSingle();
 
       registrationStatus = (registration?.status as typeof registrationStatus) ?? null;
+      isMandatory = registration?.is_mandatory === true;
     }
   }
 
@@ -72,6 +76,13 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
     .select('*', { count: 'exact', head: true })
     .eq('event_id', event.id)
     .eq('status', 'registered');
+
+  // Get mandatory attendee count
+  const { count: mandatoryCount } = await supabase
+    .from('event_registrations')
+    .select('*', { count: 'exact', head: true })
+    .eq('event_id', event.id)
+    .eq('is_mandatory', true);
 
   return (
     <AppShell title={event.title} eyebrow="Event detail">
@@ -99,6 +110,12 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
                 {event.capacity ? ` / ${event.capacity}` : ''}
               </dd>
             </div>
+            {(mandatoryCount ?? 0) > 0 && (
+              <div>
+                <dt className="font-semibold text-camp-moss">Mandatory attendees</dt>
+                <dd>{mandatoryCount}</dd>
+              </div>
+            )}
             <div>
               <dt className="font-semibold text-camp-moss">Status</dt>
               <dd className="capitalize">{event.status}</dd>
@@ -109,7 +126,12 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
         <div className="flex flex-col gap-4">
           <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
             <h3 className="font-serif text-xl text-camp-forest">Registration</h3>
-            {registrationStatus === 'registered' && (
+            {isMandatory && registrationStatus === 'registered' && (
+              <p className="mt-3 text-sm text-blue-700" data-testid="mandatory-badge">
+                📋 You are a mandatory attendee for this event.
+              </p>
+            )}
+            {!isMandatory && registrationStatus === 'registered' && (
               <p className="mt-3 text-sm text-green-700">✓ You are registered for this event.</p>
             )}
             {registrationStatus === 'waitlisted' && (
@@ -132,6 +154,7 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
                 eventId={event.id}
                 eventSlug={event.slug}
                 currentStatus={registrationStatus}
+                isMandatory={isMandatory}
               />
             </div>
           </article>

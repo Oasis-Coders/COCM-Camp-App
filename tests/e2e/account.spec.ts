@@ -94,9 +94,7 @@ test.describe.serial('account e2e', () => {
     await currentUserRow.getByRole('button', { name: 'Save' }).click();
 
     await expect(
-      currentUserRow.getByText(
-        'Role updated to admin. The app will refresh automatically.'
-      )
+      currentUserRow.getByText('Role updated to admin. The app will refresh automatically.')
     ).toBeVisible();
     await expect(page).toHaveURL(/\/dev-tools\/users$/);
     await expect(currentUserRow.getByLabel('Change role')).toHaveValue('admin');
