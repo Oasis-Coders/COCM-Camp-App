@@ -687,45 +687,62 @@ export function DashboardCalendar({
             </select>
           </label>
 
-          <div className="flex items-center overflow-hidden rounded-2xl border border-camp-forest/10">
-            <Link
-              href={buildDashboardHref(previousNav, selectedProfileId, viewMode)}
-              scroll={false}
+          <div className="mx-auto flex w-fit items-center overflow-hidden rounded-2xl border border-camp-forest/10 sm:mx-0">
+            <button
+              type="button"
+              onClick={() =>
+                router.push(buildDashboardHref(previousNav, selectedProfileId, viewMode), {
+                  scroll: false,
+                })
+              }
               className="flex items-center justify-center px-3 py-3 text-camp-forest transition hover:bg-camp-sand/60"
               aria-label={`Previous ${navLabel}`}
             >
               <NavArrowIcon direction="left" />
-            </Link>
-            <Link
-              href={buildDashboardHref(
-                isDay ? gridStartDate : weekStartDate,
-                selectedProfileId,
-                'day'
-              )}
-              scroll={false}
-              className={`border-l border-camp-forest/10 px-4 py-3 text-center text-sm font-semibold transition ${
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(
+                  buildDashboardHref(
+                    isDay ? gridStartDate : weekStartDate,
+                    selectedProfileId,
+                    'day'
+                  ),
+                  { scroll: false }
+                )
+              }
+              className={`border-l border-camp-forest/10 px-5 py-3 text-center text-sm font-semibold transition ${
                 isDay ? 'bg-camp-forest text-white' : 'text-camp-forest hover:bg-camp-sand/60'
               }`}
             >
               Day
-            </Link>
-            <Link
-              href={buildDashboardHref(weekStartDate, selectedProfileId, 'week')}
-              scroll={false}
-              className={`border-l border-camp-forest/10 px-4 py-3 text-center text-sm font-semibold transition ${
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(buildDashboardHref(weekStartDate, selectedProfileId, 'week'), {
+                  scroll: false,
+                })
+              }
+              className={`border-l border-camp-forest/10 px-5 py-3 text-center text-sm font-semibold transition ${
                 !isDay ? 'bg-camp-forest text-white' : 'text-camp-forest hover:bg-camp-sand/60'
               }`}
             >
               Week
-            </Link>
-            <Link
-              href={buildDashboardHref(nextNav, selectedProfileId, viewMode)}
-              scroll={false}
+            </button>
+            <button
+              type="button"
+              onClick={() =>
+                router.push(buildDashboardHref(nextNav, selectedProfileId, viewMode), {
+                  scroll: false,
+                })
+              }
               className="flex items-center justify-center border-l border-camp-forest/10 px-3 py-3 text-camp-forest transition hover:bg-camp-sand/60"
               aria-label={`Next ${navLabel}`}
             >
               <NavArrowIcon direction="right" />
-            </Link>
+            </button>
           </div>
         </div>
       </div>
