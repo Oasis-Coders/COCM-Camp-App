@@ -161,9 +161,10 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   const weekStart = getWeekStart(isDayView ? params.date : params.week);
   const selectedDayDate = isDayView ? getSelectedDate(params.date) : null;
 
-  const rangeStart = isDayView && selectedDayDate ? selectedDayDate : weekStart;
-  const rangeEnd =
-    isDayView && selectedDayDate ? addDays(selectedDayDate, 1) : addDays(weekStart, 7);
+  // Always fetch the full week so the client can toggle day/week views
+  // without a server round-trip (which triggers Suspense and resets scroll).
+  const rangeStart = weekStart;
+  const rangeEnd = addDays(weekStart, 7);
 
   const isAdmin = adminPrivilegedRoles.includes(session.role);
   const isStaff = session.role === 'staff';
