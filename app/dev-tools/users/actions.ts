@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 
 import { normalizeRoleActionInput } from '@/lib/dev-tools/user-directory';
 import { createSupabaseAdminClient } from '@/lib/supabase/admin';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export type ChangeUserRoleState = {
   status: 'idle' | 'success' | 'error';
@@ -105,14 +106,20 @@ export async function changeUserRole(
     }
   }
 
-  revalidatePath('/dev-tools/users');
-  revalidatePath('/profile');
+  // When the current user changes their own role, refresh their session so the
+  // browser cookie JWT carries the updated app_metadata immediately.
+  if (userId === currentUserId) {
+    const userClient = await createSupabaseServerClient();
+    await userClient?.auth.refreshSession();
+  }
+
+  revalidatePath('/', 'layout');
 
   return {
     status: 'success',
     message:
       userId === currentUserId
-        ? 'User role updated successfully. Reload the app if your own navigation should change immediately.'
+        ? `Role updated to ${targetRole.replace('_', ' ')}. The app will refresh automatically.`
         : 'User role updated successfully.',
     role: targetRole,
     submittedAt: Date.now(),

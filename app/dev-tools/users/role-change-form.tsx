@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { useRouter } from 'next/navigation';
 
 import { appRoles, type AppRole } from '@/lib/app-config';
 
@@ -41,6 +42,7 @@ export function RoleChangeForm({
   currentAuthUserId: string;
   initialRole: AppRole;
 }) {
+  const router = useRouter();
   const [selectedRole, setSelectedRole] = useState<AppRole>(initialRole);
   const [state, formAction] = useActionState(changeUserRole, initialState);
   const messageTone =
@@ -51,8 +53,12 @@ export function RoleChangeForm({
   useEffect(() => {
     if (state.status === 'success' && state.role) {
       setSelectedRole(normalizeSelectRole(state.role));
+      // Force Next.js to re-render all server components so the sidebar,
+      // middleware checks, and every other role-aware surface pick up the
+      // updated role immediately — no manual reload required.
+      router.refresh();
     }
-  }, [state.role, state.status]);
+  }, [state.role, state.status, router]);
 
   useEffect(() => {
     setSelectedRole(initialRole);
