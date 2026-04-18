@@ -32,7 +32,13 @@ export function CheckInList({ registrations }: { registrations: EventRegistratio
   return (
     <div className="grid gap-4">
       {registrations.length === 0 ? (
-        <p className="text-sm text-slate-500">No active registrations found.</p>
+        <div className="rounded-[24px] border border-dashed border-camp-forest/10 bg-white/60 p-8 text-center">
+          <p className="text-4xl">✅</p>
+          <p className="mt-3 font-serif text-lg text-camp-forest">No active registrations</p>
+          <p className="mt-1 text-sm text-slate-500">
+            There are no confirmed registrations to check in.
+          </p>
+        </div>
       ) : (
         registrations.map((reg) => {
           const name = reg.user

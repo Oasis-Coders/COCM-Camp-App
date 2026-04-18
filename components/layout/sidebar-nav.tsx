@@ -36,7 +36,7 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
       onScroll={(event) => {
         window.sessionStorage.setItem(SIDEBAR_SCROLL_KEY, String(event.currentTarget.scrollTop));
       }}
-      className="space-y-2 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
+      className="space-y-1 lg:min-h-0 lg:flex-1 lg:overflow-y-auto lg:pr-1"
     >
       {items.map((item) => {
         const isActive = isActivePath(pathname, item.href);
@@ -48,12 +48,12 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
             scroll={false}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'block rounded-2xl border border-transparent px-4 py-3 transition hover:border-camp-forest/20 hover:bg-white',
+              'block rounded-xl border border-transparent px-3 py-2 transition hover:border-camp-forest/20 hover:bg-white',
               isActive && 'border-camp-forest/15 bg-white'
             )}
           >
             <span className="block font-semibold text-camp-forest">{item.label}</span>
-            <span className="block text-sm text-slate-600">{item.description}</span>
+            <span className="block text-xs text-slate-600">{item.description}</span>
           </Link>
         );
       })}

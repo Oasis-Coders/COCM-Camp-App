@@ -1,4 +1,5 @@
 import { SignOutButton } from '@/components/auth/sign-out-button';
+import { MobileSidebar } from '@/components/layout/mobile-sidebar';
 import { SidebarNav } from '@/components/layout/sidebar-nav';
 import { navItems } from '@/lib/app-config';
 import { getSession } from '@/lib/auth/session';
@@ -12,19 +13,20 @@ type AppShellProps = {
 export async function AppShell({ title, eyebrow, children }: AppShellProps) {
   const session = await getSession();
 
+  const filteredNav = navItems.filter(
+    (item) => session.isAuthenticated && (!item.roles || item.roles.includes(session.role))
+  );
+
   return (
     <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(217,237,246,0.75),_transparent_32%),linear-gradient(180deg,_#fcfcf7_0%,_#f6f0df_100%)] text-slate-950">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 py-4 lg:flex-row lg:px-8">
-        <aside className="w-full rounded-[28px] border border-camp-forest/10 bg-white/80 p-5 shadow-panel backdrop-blur lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100vh-2rem)] lg:w-80 lg:flex-col lg:overflow-hidden">
-          <div className="rounded-[24px] bg-camp-forest p-5 text-white">
+        <MobileSidebar>
+          <div className="rounded-[24px] bg-camp-forest p-4 text-white">
             <p className="text-xs uppercase tracking-[0.3em] text-camp-sky">Camp Ops</p>
-            <h1 className="mt-3 font-serif text-3xl">Infrastructure Scaffold</h1>
-            <p className="mt-3 text-sm text-white/80">
-              Minimal shell for events, tasks, check-in, and role-aware navigation.
-            </p>
+            <h1 className="mt-2 font-serif text-2xl">Camp Management</h1>
           </div>
 
-          <div className="mt-5 rounded-[24px] border border-camp-forest/10 bg-camp-sand/60 p-4 text-sm">
+          <div className="mt-4 rounded-[24px] border border-camp-forest/10 bg-camp-sand/60 p-3 text-sm">
             <p className="font-semibold text-camp-forest">{session.displayName}</p>
             <p className="text-slate-700">{session.email}</p>
             <p className="mt-2 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-camp-forest">
@@ -33,12 +35,7 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
           </div>
 
           <div className="mt-5 flex min-h-0 flex-1 flex-col">
-            <SidebarNav
-              items={navItems.filter(
-                (item) =>
-                  session.isAuthenticated && (!item.roles || item.roles.includes(session.role))
-              )}
-            />
+            <SidebarNav items={filteredNav} />
 
             {session.isAuthenticated && (
               <div className="mt-4 border-t border-camp-forest/10 pt-4">
@@ -46,23 +43,12 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
               </div>
             )}
           </div>
-        </aside>
+        </MobileSidebar>
 
         <main className="flex-1">
           <header className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel backdrop-blur">
             <p className="text-xs uppercase tracking-[0.3em] text-camp-moss">{eyebrow}</p>
-            <div className="mt-3 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
-              <div>
-                <h2 className="font-serif text-4xl text-camp-forest">{title}</h2>
-                <p className="mt-2 max-w-2xl text-slate-600">
-                  Demo auth keeps the shell usable immediately. Supabase helpers and route
-                  boundaries are ready to wire into a real project as soon as keys are added.
-                </p>
-              </div>
-              <div className="rounded-2xl bg-camp-sky px-4 py-3 text-sm text-camp-forest">
-                Mode: <span className="font-semibold">{session.mode}</span>
-              </div>
-            </div>
+            <h2 className="mt-3 font-serif text-4xl text-camp-forest">{title}</h2>
           </header>
 
           <section className="mt-6">{children}</section>

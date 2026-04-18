@@ -257,7 +257,8 @@ export function TaskList({
       <div className="grid gap-4">
         {filteredTasks.length === 0 ? (
           <div className="rounded-[24px] border border-dashed border-slate-200 bg-white/60 p-8 text-center">
-            <p className="text-sm text-slate-500">
+            <p className="text-4xl">📋</p>
+            <p className="mt-3 text-sm text-slate-500">
               {filter === 'mine'
                 ? 'No tasks assigned to you.'
                 : filter === 'active'
