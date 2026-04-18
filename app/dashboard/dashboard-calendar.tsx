@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { startTransition, useEffect, useMemo, useState } from 'react';
+import { startTransition, useEffect, useLayoutEffect, useMemo, useState } from 'react';
 
 import {
   createPersonalCalendarEvent,
@@ -330,6 +330,10 @@ function BucketIcon() {
   );
 }
 
+/* Survives Suspense unmount/remount – stores scroll position before
+   cross-week router.push so we can restore it after the page re-mounts. */
+let savedScrollY: number | null = null;
+
 export function DashboardCalendar({
   currentProfileId,
   selectedProfileId,
@@ -357,10 +361,19 @@ export function DashboardCalendar({
   const [localSelectedDate, setLocalSelectedDate] = useState(selectedDate);
 
   // Sync when server provides new data (cross-week nav, profile change)
+  // Sync when server provides new data (cross-week nav, profile change)
   useEffect(() => {
     setLocalViewMode(viewMode);
     setLocalSelectedDate(selectedDate);
   }, [viewMode, selectedDate, weekStart, selectedProfileId]);
+
+  // Restore scroll position after Suspense remount (runs before paint)
+  useLayoutEffect(() => {
+    if (savedScrollY !== null) {
+      window.scrollTo(0, savedScrollY);
+      savedScrollY = null;
+    }
+  });
 
   const isDay = localViewMode === 'day';
   const activeDayCount = isDay ? 1 : 7;
@@ -461,6 +474,7 @@ export function DashboardCalendar({
         buildDashboardHref(targetDate, selectedProfileId, targetView)
       );
     } else {
+      savedScrollY = window.scrollY;
       router.push(buildDashboardHref(targetDate, selectedProfileId, targetView), {
         scroll: false,
       });
@@ -702,6 +716,7 @@ export function DashboardCalendar({
             <select
               value={selectedProfileId}
               onChange={(event) => {
+                savedScrollY = window.scrollY;
                 router.push(
                   buildDashboardHref(
                     isDay ? gridStartDate : weekStartDate,
