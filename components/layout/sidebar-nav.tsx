@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 
 import type { NavItem } from '@/lib/app-config';
@@ -16,6 +16,12 @@ function isActivePath(pathname: string, href: string) {
 export function SidebarNav({ items }: { items: NavItem[] }) {
   const pathname = usePathname();
   const navRef = useRef<HTMLElement>(null);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+
+  // Clear pending state when pathname changes (navigation completed)
+  useEffect(() => {
+    setPendingHref(null);
+  }, [pathname]);
 
   useEffect(() => {
     const nav = navRef.current;
@@ -40,19 +46,31 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
     >
       {items.map((item) => {
         const isActive = isActivePath(pathname, item.href);
+        const isPending = pendingHref === item.href && !isActive;
+        const isHighlighted = isActive || isPending;
 
         return (
           <Link
             key={item.href}
             href={item.href}
             scroll={false}
+            onClick={() => {
+              if (!isActive) {
+                setPendingHref(item.href);
+              }
+            }}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
               'block rounded-xl border border-transparent px-3 py-2 transition hover:border-camp-forest/20 hover:bg-white',
-              isActive && 'border-camp-forest/15 bg-white'
+              isHighlighted && 'border-camp-forest/15 bg-white'
             )}
           >
-            <span className="block font-semibold text-camp-forest">{item.label}</span>
+            <span className="flex items-center gap-2 font-semibold text-camp-forest">
+              {item.label}
+              {isPending && (
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-camp-forest/50" />
+              )}
+            </span>
             <span className="block text-xs text-slate-600">{item.description}</span>
           </Link>
         );
