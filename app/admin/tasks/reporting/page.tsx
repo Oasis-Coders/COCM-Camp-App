@@ -50,7 +50,7 @@ export default async function TaskReportingPage() {
         {/* Status + Priority breakdown side-by-side */}
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Status breakdown */}
-          <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel">
+          <div className="rounded-card border border-camp-forest/10 bg-white p-5 shadow-card">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-camp-moss">
               By Status
             </h3>
@@ -77,7 +77,7 @@ export default async function TaskReportingPage() {
                         />
                       </div>
                     </div>
-                    <span className="w-12 text-right text-sm font-semibold text-slate-700">
+                    <span className="w-12 text-right text-sm font-semibold text-camp-moss">
                       {row.count}
                     </span>
                   </div>
@@ -87,7 +87,7 @@ export default async function TaskReportingPage() {
           </div>
 
           {/* Priority breakdown */}
-          <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel">
+          <div className="rounded-card border border-camp-forest/10 bg-white p-5 shadow-card">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-camp-moss">
               By Priority
             </h3>
@@ -113,7 +113,7 @@ export default async function TaskReportingPage() {
                         />
                       </div>
                     </div>
-                    <span className="w-12 text-right text-sm font-semibold text-slate-700">
+                    <span className="w-12 text-right text-sm font-semibold text-camp-moss">
                       {row.count}
                     </span>
                   </div>
@@ -125,7 +125,7 @@ export default async function TaskReportingPage() {
 
         {/* Assignee workload */}
         {snapshot.assigneeWorkload.length > 0 && (
-          <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel">
+          <div className="rounded-card border border-camp-forest/10 bg-white p-5 shadow-card">
             <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-camp-moss">
               Workload by Assignee
             </h3>
@@ -147,7 +147,7 @@ export default async function TaskReportingPage() {
                       key={row.assigneeId ?? 'unassigned'}
                       className="border-b border-slate-50 last:border-0"
                     >
-                      <td className="py-3 pr-4 font-medium text-slate-700">
+                      <td className="py-3 pr-4 font-medium text-camp-moss">
                         {row.assigneeId ? (
                           (profileMap.get(row.assigneeId) ?? 'Unknown')
                         ) : (
@@ -200,7 +200,7 @@ export default async function TaskReportingPage() {
         )}
 
         {/* Completion summary card */}
-        <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel">
+        <div className="rounded-card border border-camp-forest/10 bg-white p-5 shadow-card">
           <h3 className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-camp-moss">
             Completion Summary
           </h3>
@@ -232,7 +232,7 @@ export default async function TaskReportingPage() {
                 </span>
               </div>
             </div>
-            <div className="flex flex-col gap-1 text-sm text-slate-600">
+            <div className="flex flex-col gap-1 text-sm text-camp-moss">
               <p>
                 <span className="font-semibold text-green-700">
                   {snapshot.completion.completed}
@@ -240,7 +240,7 @@ export default async function TaskReportingPage() {
                 completed
               </p>
               <p>
-                <span className="font-semibold text-slate-700">{snapshot.completion.active}</span>{' '}
+                <span className="font-semibold text-camp-moss">{snapshot.completion.active}</span>{' '}
                 active
               </p>
               <p>
@@ -257,13 +257,13 @@ export default async function TaskReportingPage() {
         <div className="flex gap-3">
           <Link
             href="/admin/tasks"
-            className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-camp-moss transition hover:bg-slate-50"
           >
             ← Back to tasks
           </Link>
           <Link
             href="/tasks"
-            className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+            className="rounded-full border border-slate-200 px-5 py-2.5 text-sm font-semibold text-camp-moss transition hover:bg-slate-50"
           >
             View all tasks
           </Link>
@@ -298,10 +298,10 @@ function TopMetric({
           : 'text-camp-forest';
 
   return (
-    <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel">
+    <article className="rounded-card border border-camp-forest/10 bg-white p-5 shadow-card">
       <p className="text-xs font-semibold uppercase tracking-[0.2em] text-camp-moss">{label}</p>
       <p className={`mt-3 font-serif text-4xl ${accentColor}`}>{value}</p>
-      <p className="mt-2 text-sm text-slate-500">{helper}</p>
+      <p className="mt-2 text-sm text-camp-moss">{helper}</p>
     </article>
   );
 }

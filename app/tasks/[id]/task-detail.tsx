@@ -84,14 +84,14 @@ export function TaskDetail({
       {/* Back link */}
       <Link
         href="/tasks"
-        className="inline-flex items-center gap-1 text-sm text-slate-500 transition hover:text-camp-forest"
+        className="inline-flex items-center gap-1 text-sm text-camp-moss transition hover:text-camp-forest"
       >
         ← Back to tasks
       </Link>
 
       {/* Main card */}
       <div
-        className={`rounded-[28px] border bg-white/90 p-6 shadow-panel transition-opacity ${
+        className={`rounded-panel border bg-white/90 p-6 shadow-card transition-opacity ${
           isPending ? 'opacity-50' : ''
         } border-camp-forest/10`}
       >
@@ -119,7 +119,7 @@ export function TaskDetail({
             <div className="flex gap-2">
               <button
                 onClick={() => setIsEditing(!isEditing)}
-                className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-slate-600 transition hover:bg-slate-50"
+                className="rounded-full border border-slate-200 px-4 py-1.5 text-xs font-semibold text-camp-moss transition hover:bg-slate-50"
               >
                 {isEditing ? 'Cancel edit' : 'Edit'}
               </button>
@@ -142,7 +142,7 @@ export function TaskDetail({
             <h4 className="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
               Description
             </h4>
-            <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-camp-moss">
               {task.description}
             </p>
           </div>
@@ -252,16 +252,16 @@ export function TaskDetail({
       {/* Delete confirmation modal */}
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="mx-4 w-full max-w-sm rounded-[24px] border border-red-200 bg-white p-6 shadow-2xl">
+          <div className="mx-4 w-full max-w-sm rounded-card border border-red-200 bg-white p-6 shadow-2xl">
             <h3 className="font-serif text-xl text-camp-forest">Delete task?</h3>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-camp-moss">
               This will permanently remove &ldquo;{task.title}&rdquo;. This action cannot be undone.
             </p>
             <div className="mt-5 flex gap-3">
               <button
                 onClick={() => setShowDeleteConfirm(false)}
                 disabled={isPending}
-                className="flex-1 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+                className="flex-1 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-camp-moss transition hover:bg-slate-50"
               >
                 Cancel
               </button>
@@ -350,7 +350,7 @@ function EditForm({
 
       <div className="flex flex-col gap-4">
         <div>
-          <label htmlFor="edit-title" className="mb-1 block text-xs font-medium text-slate-500">
+          <label htmlFor="edit-title" className="mb-1 block text-xs font-medium text-camp-moss">
             Title
           </label>
           <input
@@ -364,7 +364,7 @@ function EditForm({
         </div>
 
         <div>
-          <label htmlFor="edit-desc" className="mb-1 block text-xs font-medium text-slate-500">
+          <label htmlFor="edit-desc" className="mb-1 block text-xs font-medium text-camp-moss">
             Description
           </label>
           <textarea
@@ -380,7 +380,7 @@ function EditForm({
           <div>
             <label
               htmlFor="edit-priority"
-              className="mb-1 block text-xs font-medium text-slate-500"
+              className="mb-1 block text-xs font-medium text-camp-moss"
             >
               Priority
             </label>
@@ -398,7 +398,7 @@ function EditForm({
             </select>
           </div>
           <div>
-            <label htmlFor="edit-assign" className="mb-1 block text-xs font-medium text-slate-500">
+            <label htmlFor="edit-assign" className="mb-1 block text-xs font-medium text-camp-moss">
               Assignee
             </label>
             <select
@@ -419,7 +419,7 @@ function EditForm({
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label htmlFor="edit-event" className="mb-1 block text-xs font-medium text-slate-500">
+            <label htmlFor="edit-event" className="mb-1 block text-xs font-medium text-camp-moss">
               Event
             </label>
             <select
@@ -437,7 +437,7 @@ function EditForm({
             </select>
           </div>
           <div>
-            <label htmlFor="edit-due" className="mb-1 block text-xs font-medium text-slate-500">
+            <label htmlFor="edit-due" className="mb-1 block text-xs font-medium text-camp-moss">
               Due Date
             </label>
             <input
@@ -453,7 +453,7 @@ function EditForm({
         <button
           type="submit"
           disabled={isPending}
-          className="self-start rounded-full bg-camp-forest px-6 py-2 text-sm font-semibold text-white transition hover:bg-camp-forest/90 disabled:opacity-60"
+          className="self-start rounded-xl bg-camp-ember px-6 py-2 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark disabled:opacity-60"
         >
           {isPending ? 'Saving…' : 'Save changes'}
         </button>
@@ -490,7 +490,7 @@ function DetailField({
               ? 'text-green-600'
               : highlight
                 ? 'text-camp-forest'
-                : 'text-slate-700'
+                : 'text-camp-moss'
         }`}
       >
         {value}

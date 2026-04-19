@@ -87,10 +87,10 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
   return (
     <AppShell title={event.title} eyebrow="Event detail">
       <div className="grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
           <h3 className="font-serif text-2xl text-camp-forest">Event summary</h3>
-          {event.description && <p className="mt-3 text-slate-600">{event.description}</p>}
-          <dl className="mt-4 grid gap-3 text-sm text-slate-700">
+          {event.description && <p className="mt-3 text-camp-moss">{event.description}</p>}
+          <dl className="mt-4 grid gap-3 text-sm text-camp-moss">
             <div>
               <dt className="font-semibold text-camp-moss">Location</dt>
               <dd>{event.location}</dd>
@@ -124,7 +124,7 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
         </article>
 
         <div className="flex flex-col gap-4">
-          <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+          <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
             <h3 className="font-serif text-xl text-camp-forest">Registration</h3>
             {isMandatory && registrationStatus === 'registered' && (
               <p className="mt-3 text-sm text-blue-700" data-testid="mandatory-badge">
@@ -140,12 +140,12 @@ export default async function EventDetailPage({ params }: EventDetailProps) {
               </p>
             )}
             {registrationStatus === 'cancelled' && (
-              <p className="mt-3 text-sm text-slate-500">
+              <p className="mt-3 text-sm text-camp-moss">
                 Your registration was cancelled. You can register again below.
               </p>
             )}
             {!registrationStatus && (
-              <p className="mt-3 text-sm text-slate-600">
+              <p className="mt-3 text-sm text-camp-moss">
                 Sign up to reserve your spot for this event.
               </p>
             )}

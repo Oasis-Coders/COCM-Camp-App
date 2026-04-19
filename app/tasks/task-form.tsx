@@ -81,14 +81,14 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="mx-4 w-full max-w-lg rounded-[28px] border border-camp-forest/10 bg-white p-6 shadow-2xl">
+      <div className="mx-4 w-full max-w-lg rounded-panel border border-camp-forest/10 bg-white p-6 shadow-2xl">
         <div className="mb-5 flex items-center justify-between">
           <h3 className="font-serif text-2xl text-camp-forest">
             {isEditing ? 'Edit Task' : 'New Task'}
           </h3>
           <button
             onClick={onClose}
-            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600"
+            className="rounded-full p-2 text-slate-400 transition hover:bg-slate-100 hover:text-camp-moss"
           >
             ✕
           </button>
@@ -101,7 +101,7 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
         <form ref={formRef} onSubmit={handleSubmit} className="flex flex-col gap-4">
           {/* Title */}
           <div>
-            <label htmlFor="task-title" className="mb-1 block text-xs font-medium text-slate-500">
+            <label htmlFor="task-title" className="mb-1 block text-xs font-medium text-camp-moss">
               Title *
             </label>
             <input
@@ -119,7 +119,7 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
           <div>
             <label
               htmlFor="task-description"
-              className="mb-1 block text-xs font-medium text-slate-500"
+              className="mb-1 block text-xs font-medium text-camp-moss"
             >
               Description
             </label>
@@ -138,7 +138,7 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
             <div>
               <label
                 htmlFor="task-priority"
-                className="mb-1 block text-xs font-medium text-slate-500"
+                className="mb-1 block text-xs font-medium text-camp-moss"
               >
                 Priority
               </label>
@@ -159,7 +159,7 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
               <div>
                 <label
                   htmlFor="task-status"
-                  className="mb-1 block text-xs font-medium text-slate-500"
+                  className="mb-1 block text-xs font-medium text-camp-moss"
                 >
                   Initial Status
                 </label>
@@ -181,7 +181,7 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
             <div>
               <label
                 htmlFor="task-assignee"
-                className="mb-1 block text-xs font-medium text-slate-500"
+                className="mb-1 block text-xs font-medium text-camp-moss"
               >
                 Assign To
               </label>
@@ -200,7 +200,7 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
               </select>
             </div>
             <div>
-              <label htmlFor="task-event" className="mb-1 block text-xs font-medium text-slate-500">
+              <label htmlFor="task-event" className="mb-1 block text-xs font-medium text-camp-moss">
                 Event
               </label>
               <select
@@ -221,7 +221,7 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
 
           {/* Due date */}
           <div>
-            <label htmlFor="task-due" className="mb-1 block text-xs font-medium text-slate-500">
+            <label htmlFor="task-due" className="mb-1 block text-xs font-medium text-camp-moss">
               Due Date
             </label>
             <input
@@ -239,14 +239,14 @@ export function TaskForm({ onClose, events, staffProfiles, task }: TaskFormProps
               type="button"
               onClick={onClose}
               disabled={isPending}
-              className="flex-1 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-50"
+              className="flex-1 rounded-full border border-slate-200 px-4 py-2.5 text-sm font-semibold text-camp-moss transition hover:bg-slate-50"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={isPending}
-              className="flex-1 rounded-full bg-camp-forest px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-camp-forest/90 disabled:opacity-60"
+              className="flex-1 rounded-xl bg-camp-ember px-4 py-2.5 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark disabled:opacity-60"
             >
               {isPending
                 ? isEditing

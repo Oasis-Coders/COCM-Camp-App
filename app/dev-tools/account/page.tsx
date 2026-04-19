@@ -13,10 +13,10 @@ export default async function DevToolsAccountPage() {
 
   return (
     <AppShell title="Dev Tools" eyebrow="Temporary internal tools">
-      <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+      <div className="rounded-panel border border-camp-forest/10 bg-white p-6 shadow-card">
         <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Account tools</p>
         <h3 className="mt-3 font-serif text-2xl text-camp-forest">Open to every signed-in user</h3>
-        <p className="mt-3 max-w-2xl text-sm text-slate-600">
+        <p className="mt-3 max-w-2xl text-sm text-camp-moss">
           Account management now lives in the main Profile area, but this Dev Tools route stays
           available for everyone so it can act as a shared landing page instead of redirecting away.
         </p>
@@ -24,7 +24,7 @@ export default async function DevToolsAccountPage() {
         <div className="mt-6 flex flex-wrap gap-3">
           <Link
             href="/profile"
-            className="rounded-2xl bg-camp-forest px-5 py-3 text-sm font-semibold text-white transition hover:bg-camp-moss"
+            className="rounded-xl bg-camp-ember px-5 py-3 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark"
           >
             Go to Profile
           </Link>

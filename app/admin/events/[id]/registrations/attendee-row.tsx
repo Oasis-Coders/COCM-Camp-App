@@ -62,15 +62,15 @@ export function AttendeeRow({ eventId, attendee }: { eventId: string; attendee: 
               !attendee.profiles?.last_name &&
               attendee.profiles?.display_name}
             {attendee.is_mandatory && (
-              <span className="ml-2 inline-block rounded-full bg-camp-forest/10 px-2 py-0.5 text-xs font-medium text-camp-forest">
+              <span className="bg-camp-forest/8 ml-2 inline-block rounded-full px-2 py-0.5 text-xs font-medium text-camp-forest">
                 Mandatory
               </span>
             )}
           </h3>
-          <p className="text-sm text-slate-500">{attendee.profiles?.email}</p>
+          <p className="text-sm text-camp-moss">{attendee.profiles?.email}</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 text-right text-xs text-slate-500">
+        <div className="flex flex-wrap items-center gap-2 text-right text-xs text-camp-moss">
           <span>{new Date(attendee.registered_at).toLocaleDateString()}</span>
 
           {attendee.status === 'waitlisted' && (
@@ -106,13 +106,13 @@ export function AttendeeRow({ eventId, attendee }: { eventId: string; attendee: 
       </div>
 
       {attendee.notes && !parsedNotes && (
-        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-700">
+        <div className="mt-2 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-camp-moss">
           <strong>Raw Notes:</strong> {attendee.notes}
         </div>
       )}
 
       {parsedNotes && (
-        <div className="mt-4 grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-slate-700 md:grid-cols-2">
+        <div className="mt-4 grid gap-2 rounded-lg border border-slate-200 bg-slate-50 p-4 text-sm text-camp-moss md:grid-cols-2">
           {Object.entries(parsedNotes).map(([key, value]) => {
             if (!value) return null; // skip empty
             // Format keys slightly better (chinese_name -> Chinese Name)

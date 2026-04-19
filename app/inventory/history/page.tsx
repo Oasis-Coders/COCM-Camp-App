@@ -113,16 +113,16 @@ export default async function InventoryHistoryPage() {
     <AppShell title="Inventory History" eyebrow="Staff operations">
       <div className="grid gap-6">
         {!history.enabled ? (
-          <article className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+          <article className="rounded-panel border border-camp-forest/10 bg-white p-6 shadow-card">
             <h3 className="font-serif text-2xl text-camp-forest">Supabase required</h3>
-            <p className="mt-3 text-sm text-slate-600">
+            <p className="mt-3 text-sm text-camp-moss">
               Connect Supabase before the inventory history page can load.
             </p>
           </article>
         ) : (
           <>
             {history.errors.length > 0 ? (
-              <article className="rounded-[28px] border border-rose-200 bg-rose-50/80 p-6 shadow-panel">
+              <article className="rounded-panel border border-rose-200 bg-rose-50/80 p-6 shadow-card">
                 <h3 className="font-serif text-2xl text-rose-900">
                   Some history data could not be loaded
                 </h3>
@@ -134,12 +134,12 @@ export default async function InventoryHistoryPage() {
               </article>
             ) : null}
 
-            <article className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+            <article className="rounded-panel border border-camp-forest/10 bg-white p-6 shadow-card">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
                 <div>
                   <p className="text-xs uppercase tracking-[0.24em] text-camp-moss">History</p>
                   <h3 className="mt-3 font-serif text-2xl text-camp-forest">Movement records</h3>
-                  <p className="mt-2 text-sm text-slate-600">
+                  <p className="mt-2 text-sm text-camp-moss">
                     Every inbound and outbound movement records the operator and time automatically.
                   </p>
                 </div>
@@ -156,7 +156,7 @@ export default async function InventoryHistoryPage() {
 
               <div className="mt-5 grid gap-3">
                 {history.movements.length === 0 ? (
-                  <div className="rounded-[22px] border border-dashed border-camp-forest/20 bg-white/75 p-5 text-sm text-slate-600">
+                  <div className="rounded-[22px] border border-dashed border-camp-forest/20 bg-white/75 p-5 text-sm text-camp-moss">
                     No history yet.
                   </div>
                 ) : (
@@ -183,15 +183,15 @@ export default async function InventoryHistoryPage() {
                                 {movementLabel(movement.type)}
                               </span>
                             </div>
-                            <p className="mt-2 text-sm text-slate-700">
+                            <p className="mt-2 text-sm text-camp-moss">
                               {movement.type === 'delete' ? 'Stock at delete' : 'Quantity'}:{' '}
                               {movement.quantity}
                             </p>
-                            <p className="mt-1 text-sm text-slate-600">
+                            <p className="mt-1 text-sm text-camp-moss">
                               Operator: {movement.operator_name}
                             </p>
                           </div>
-                          <div className="text-sm text-slate-600">
+                          <div className="text-sm text-camp-moss">
                             {formatDateTime(movement.time)}
                           </div>
                         </div>

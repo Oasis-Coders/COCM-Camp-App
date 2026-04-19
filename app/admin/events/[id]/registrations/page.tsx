@@ -32,11 +32,11 @@ function AttendeeList({
       <h2 className="mb-4 font-serif text-xl text-camp-forest">
         {title} ({count} {capacity ? `/ ${capacity}` : ''})
       </h2>
-      <div className="overflow-hidden rounded-[24px] border border-camp-forest/10 bg-white/85 p-1 shadow-panel">
+      <div className="overflow-hidden rounded-card border border-camp-forest/10 bg-white p-1 shadow-card">
         {attendees.length === 0 ? (
           <div className="p-6 text-center">
             <p className="text-3xl">👥</p>
-            <p className="mt-2 text-sm text-slate-500">No attendees registered yet.</p>
+            <p className="mt-2 text-sm text-camp-moss">No attendees registered yet.</p>
           </div>
         ) : (
           <div className="divide-y divide-slate-200">

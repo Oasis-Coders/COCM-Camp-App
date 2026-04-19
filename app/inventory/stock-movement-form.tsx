@@ -33,7 +33,7 @@ function SubmitButton({ label, tone }: { label: string; tone: 'primary' | 'secon
       title={pending ? 'Saving inventory movement' : label}
       className={`inline-flex h-10 min-w-24 items-center justify-center rounded-full px-4 text-sm font-semibold transition hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-70 ${
         isPrimary
-          ? 'bg-camp-forest text-white hover:bg-camp-forest/90'
+          ? 'bg-camp-forest text-white hover:bg-camp-forest-light'
           : 'bg-camp-sand/65 text-camp-forest hover:bg-camp-sand'
       }`}
     >
@@ -87,7 +87,7 @@ export function StockMovementForm({
       <div className="grid grid-cols-[auto_minmax(58px,1fr)_auto] items-center gap-2">
         <p className="shrink-0 text-sm font-semibold text-camp-forest">{label}</p>
 
-        <label className="min-w-0 flex-1 text-sm text-slate-700">
+        <label className="min-w-0 flex-1 text-sm text-camp-moss">
           <span className="sr-only">{label} quantity</span>
           <input
             type="number"

@@ -43,7 +43,7 @@ export function RegistrationForm({ eventId }: RegistrationFormProps) {
 
   const inputClass =
     'w-full rounded-lg border border-slate-300 p-3 text-sm focus:border-camp-forest focus:outline-none focus:ring-1 focus:ring-camp-forest bg-white';
-  const labelClass = 'block text-sm font-medium text-slate-700 mb-1';
+  const labelClass = 'block text-sm font-medium text-camp-moss mb-1';
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
@@ -230,7 +230,7 @@ export function RegistrationForm({ eventId }: RegistrationFormProps) {
 
         <div className="mt-4 flex items-start gap-3">
           <input type="checkbox" id="consent" name="consent" required className="mt-1" />
-          <label htmlFor="consent" className="text-sm text-slate-600">
+          <label htmlFor="consent" className="text-sm text-camp-moss">
             I understand that the personal information provided will be used by COCM in accordance
             with the law, solely for the purpose of this camp.
           </label>
@@ -243,7 +243,7 @@ export function RegistrationForm({ eventId }: RegistrationFormProps) {
         className={`mt-4 w-full rounded-full px-6 py-4 text-base font-semibold transition-colors ${
           isPending
             ? 'cursor-wait bg-camp-forest text-white opacity-60'
-            : 'bg-camp-forest text-white hover:bg-camp-forest/90'
+            : 'bg-camp-forest text-white hover:bg-camp-forest-light'
         }`}
       >
         {isPending ? 'Submitting Registration...' : 'Submit Registration'}

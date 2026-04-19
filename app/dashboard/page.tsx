@@ -123,7 +123,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
   if (!supabase) {
     return (
       <AppShell title="Dashboard" eyebrow="Protected route">
-        <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 text-sm text-slate-600 shadow-panel">
+        <div className="rounded-panel border border-camp-forest/10 bg-white p-6 text-sm text-camp-moss shadow-card">
           Connect Supabase to use the dashboard calendar.
         </div>
       </AppShell>
@@ -446,7 +446,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
           />
         </>
       ) : (
-        <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 text-sm text-slate-600 shadow-panel">
+        <div className="rounded-panel border border-camp-forest/10 bg-white p-6 text-sm text-camp-moss shadow-card">
           Your profile needs to finish syncing before the dashboard calendar can load.
         </div>
       )}

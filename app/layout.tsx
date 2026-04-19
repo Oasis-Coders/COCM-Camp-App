@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en-GB">
-      <body>
+      <body className="bg-camp-cream text-camp-forest">
         <RouteProgress />
         {children}
       </body>
