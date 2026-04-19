@@ -403,7 +403,7 @@ export default async function DashboardPage({ searchParams }: DashboardPageProps
 
   return (
     <AppShell title="Dashboard" eyebrow="Protected route">
-      <div className="mb-6 grid gap-5 md:grid-cols-3">
+      <div className="mb-6 grid grid-cols-3 gap-3 md:gap-5">
         <MetricCard
           label="Open events"
           value={String(eventCount ?? 0)}
