@@ -273,7 +273,7 @@ function getInviteStatusClassName(status: CalendarInviteStatus) {
     return 'border-rose-200 bg-rose-50 text-rose-700';
   }
 
-  return 'border-slate-200 bg-slate-100 text-slate-600';
+  return 'border-slate-200 bg-slate-100 text-camp-moss';
 }
 
 function getInviteStatusSummary(invitees: CalendarInvitee[] = []) {
@@ -689,7 +689,7 @@ export function DashboardCalendar({
   }
 
   return (
-    <section className="rounded-[32px] border border-camp-forest/10 bg-white/90 p-5 shadow-panel backdrop-blur">
+    <section className="rounded-[32px] border border-camp-forest/10 bg-white/90 p-5 shadow-card backdrop-blur">
       <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
         <div>
           <p className="text-xs uppercase tracking-[0.28em] text-camp-moss">
@@ -703,7 +703,7 @@ export function DashboardCalendar({
               {fullDateFormatter.format(gridStartDate)}
             </p>
           ) : null}
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">
+          <p className="mt-2 max-w-2xl text-sm text-camp-moss">
             {canEdit
               ? 'Tap or drag across a time window to add a personal event. Select an event to edit it.'
               : "Viewing another user's calendar. Event creation is disabled in this view."}
@@ -781,7 +781,7 @@ export function DashboardCalendar({
         </p>
       ) : null}
 
-      <div className="mt-6 overflow-x-auto rounded-[28px] border border-camp-forest/10 bg-camp-sand/20">
+      <div className="mt-6 overflow-x-auto rounded-panel border border-camp-forest/10 bg-camp-sand/20">
         <div className={isDay ? '' : 'min-w-[920px]'}>
           <div className={`grid ${gridCols} border-b border-camp-forest/10 bg-white/80`}>
             <div className="px-3 py-4 text-xs font-semibold uppercase tracking-[0.18em] text-camp-moss">
@@ -823,7 +823,7 @@ export function DashboardCalendar({
               {Array.from({ length: endHour - startHour }, (_, index) => (
                 <div
                   key={index}
-                  className="border-b border-camp-forest/10 bg-white/55 px-3 pt-2 text-xs text-slate-500"
+                  className="border-b border-camp-forest/10 bg-white/55 px-3 pt-2 text-xs text-camp-moss"
                 >
                   {String(startHour + index).padStart(2, '0')}:00
                 </div>
@@ -895,9 +895,9 @@ export function DashboardCalendar({
                     item.kind === 'event'
                       ? 'border-camp-forest/15 bg-camp-forest text-white'
                       : item.currentInviteStatus === 'pending' && isInvitedPersonalEvent
-                        ? 'border-slate-200 bg-slate-100 text-slate-700'
+                        ? 'border-slate-200 bg-slate-100 text-camp-moss'
                         : item.currentInviteStatus === 'declined' && isInvitedPersonalEvent
-                          ? 'border-slate-200 bg-white text-slate-500 opacity-80'
+                          ? 'border-slate-200 bg-white text-camp-moss opacity-80'
                           : 'border-camp-moss/20 bg-camp-sky text-camp-forest'
                   } ${
                     item.kind === 'personal' &&
@@ -975,7 +975,7 @@ export function DashboardCalendar({
       </div>
 
       {items.length === 0 ? (
-        <div className="mt-5 rounded-[24px] border border-dashed border-camp-forest/20 bg-camp-sand/25 p-5 text-sm text-slate-600">
+        <div className="mt-5 rounded-card border border-dashed border-camp-forest/20 bg-camp-sand/25 p-5 text-sm text-camp-moss">
           {isDay
             ? 'No events are scheduled for this day. Use the calendar grid to create one for yourself.'
             : 'No events are scheduled in this week. Use the calendar grid to create one for yourself.'}
@@ -999,7 +999,7 @@ export function DashboardCalendar({
               event.preventDefault();
               saveEventForm();
             }}
-            className="w-full max-w-2xl rounded-[32px] border border-camp-forest/10 bg-white p-6 shadow-panel"
+            className="w-full max-w-2xl rounded-[32px] border border-camp-forest/10 bg-white p-6 shadow-card"
           >
             <div className="flex items-start justify-between gap-4">
               <div>
@@ -1012,7 +1012,7 @@ export function DashboardCalendar({
                 >
                   {eventForm.mode === 'edit' ? 'Edit calendar event' : 'Create calendar event'}
                 </h3>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-camp-moss">
                   Add the timing, invitees, notes, and where everyone should meet.
                 </p>
               </div>
@@ -1131,7 +1131,7 @@ export function DashboardCalendar({
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-2 text-xs font-normal text-slate-500">
+                  <p className="mt-2 text-xs font-normal text-camp-moss">
                     Search and add one or more people to invite.
                   </p>
                 )}
@@ -1152,7 +1152,7 @@ export function DashboardCalendar({
                               <span className="block text-sm font-semibold text-camp-forest">
                                 {profile.displayName}
                               </span>
-                              <span className="block text-xs font-normal text-slate-500">
+                              <span className="block text-xs font-normal text-camp-moss">
                                 {profile.email}
                               </span>
                             </span>
@@ -1162,7 +1162,7 @@ export function DashboardCalendar({
                           </button>
                         ))
                       ) : (
-                        <p className="px-3 py-2 text-xs font-normal text-slate-500">
+                        <p className="px-3 py-2 text-xs font-normal text-camp-moss">
                           No matching users available.
                         </p>
                       )}
@@ -1241,7 +1241,7 @@ export function DashboardCalendar({
               <button
                 type="submit"
                 disabled={pending || !eventForm.title.trim()}
-                className="rounded-2xl bg-camp-forest px-5 py-3 text-sm font-semibold text-white transition hover:bg-camp-moss disabled:cursor-wait disabled:opacity-70"
+                className="rounded-xl bg-camp-ember px-5 py-3 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark disabled:cursor-wait disabled:opacity-70"
               >
                 {pending
                   ? eventForm.mode === 'edit'
@@ -1268,7 +1268,7 @@ export function DashboardCalendar({
             }
           }}
         >
-          <div className="w-full max-w-xl rounded-[32px] border border-camp-forest/10 bg-white p-6 shadow-panel">
+          <div className="w-full max-w-xl rounded-[32px] border border-camp-forest/10 bg-white p-6 shadow-card">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs uppercase tracking-[0.28em] text-camp-moss">
@@ -1280,7 +1280,7 @@ export function DashboardCalendar({
                 >
                   {rsvpEvent.title}
                 </h3>
-                <p className="mt-2 text-sm text-slate-600">
+                <p className="mt-2 text-sm text-camp-moss">
                   {dateFormatter.format(new Date(rsvpEvent.startsAt))} |{' '}
                   {timeFormatter.format(new Date(rsvpEvent.startsAt))}-
                   {timeFormatter.format(new Date(rsvpEvent.endsAt))}
@@ -1297,7 +1297,7 @@ export function DashboardCalendar({
               </button>
             </div>
 
-            <div className="mt-5 grid gap-3 text-sm text-slate-600">
+            <div className="mt-5 grid gap-3 text-sm text-camp-moss">
               <p>
                 From{' '}
                 <span className="font-semibold text-camp-forest">
@@ -1336,7 +1336,7 @@ export function DashboardCalendar({
                     {(rsvpEvent.invitees ?? []).filter(
                       (invitee) => invitee.profileId !== currentProfileId
                     ).length === 0 ? (
-                      <span className="text-xs text-slate-500">No other invitees yet.</span>
+                      <span className="text-xs text-camp-moss">No other invitees yet.</span>
                     ) : null}
                   </div>
                 </div>
@@ -1363,7 +1363,7 @@ export function DashboardCalendar({
                 type="button"
                 disabled={pending}
                 onClick={() => respondToInvite('accepted')}
-                className="rounded-2xl bg-camp-forest px-5 py-3 text-sm font-semibold text-white transition hover:bg-camp-moss disabled:cursor-wait disabled:opacity-70"
+                className="rounded-xl bg-camp-ember px-5 py-3 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark disabled:cursor-wait disabled:opacity-70"
               >
                 Accept
               </button>

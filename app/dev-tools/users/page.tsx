@@ -209,12 +209,12 @@ export default async function DevToolsUsersPage({
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[1.15fr,0.85fr]">
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel xl:col-span-2">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card xl:col-span-2">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">User directory</p>
               <h3 className="mt-3 font-serif text-2xl text-camp-forest">All app users</h3>
-              <p className="mt-3 max-w-2xl text-sm text-slate-600">
+              <p className="mt-3 max-w-2xl text-sm text-camp-moss">
                 Administrative view of every auth account and whether each one has a linked profile
                 row in the app database.
               </p>
@@ -249,12 +249,12 @@ export default async function DevToolsUsersPage({
                     <tr key={entry.authUserId}>
                       <td className="px-4 py-4 align-top">
                         <p className="font-semibold text-camp-forest">{entry.displayName}</p>
-                        <p className="mt-1 text-slate-600">{entry.email}</p>
-                        <p className="mt-2 break-all text-xs text-slate-500">
+                        <p className="mt-1 text-camp-moss">{entry.email}</p>
+                        <p className="mt-2 break-all text-xs text-camp-moss">
                           Auth: {entry.authUserId}
                         </p>
                       </td>
-                      <td className="px-4 py-4 align-top capitalize text-slate-700">
+                      <td className="px-4 py-4 align-top capitalize text-camp-moss">
                         {entry.role.replace('_', ' ')}
                       </td>
                       <td className="px-4 py-4 align-top">
@@ -267,16 +267,16 @@ export default async function DevToolsUsersPage({
                         >
                           {entry.profileStatus}
                         </span>
-                        <p className="mt-2 break-all text-xs text-slate-500">
+                        <p className="mt-2 break-all text-xs text-camp-moss">
                           {entry.profileId
                             ? `Profile: ${entry.profileId}`
                             : 'No linked profile row'}
                         </p>
                       </td>
-                      <td className="px-4 py-4 align-top text-slate-700">
+                      <td className="px-4 py-4 align-top text-camp-moss">
                         {entry.createdAt ? new Date(entry.createdAt).toLocaleString() : 'Unknown'}
                       </td>
-                      <td className="px-4 py-4 align-top text-slate-700">
+                      <td className="px-4 py-4 align-top text-camp-moss">
                         {entry.lastSignInAt
                           ? new Date(entry.lastSignInAt).toLocaleString()
                           : 'Never'}
@@ -343,10 +343,10 @@ export default async function DevToolsUsersPage({
           )}
         </article>
 
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Current session</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">Who is using the tools</h3>
-          <dl className="mt-6 grid gap-4 text-sm text-slate-700">
+          <dl className="mt-6 grid gap-4 text-sm text-camp-moss">
             <div>
               <dt className="font-semibold text-camp-moss">Display name</dt>
               <dd>{session.displayName}</dd>

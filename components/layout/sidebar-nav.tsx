@@ -61,17 +61,17 @@ export function SidebarNav({ items }: { items: NavItem[] }) {
             }}
             aria-current={isActive ? 'page' : undefined}
             className={cn(
-              'block rounded-xl border border-transparent px-3 py-2 transition hover:border-camp-forest/20 hover:bg-white',
-              isHighlighted && 'border-camp-forest/15 bg-white'
+              'block rounded-xl border border-transparent px-3 py-2.5 transition-all hover:border-camp-forest/15 hover:bg-camp-sand/40',
+              isHighlighted && 'border-camp-forest/10 bg-white shadow-sm'
             )}
           >
-            <span className="flex items-center gap-2 font-semibold text-camp-forest">
+            <span className="flex items-center gap-2 text-sm font-semibold text-camp-forest">
               {item.label}
               {isPending && (
-                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-camp-forest/50" />
+                <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-camp-ember/60" />
               )}
             </span>
-            <span className="block text-xs text-slate-600">{item.description}</span>
+            <span className="block text-xs text-camp-moss">{item.description}</span>
           </Link>
         );
       })}

@@ -28,7 +28,7 @@ function SubmitButton() {
     <button
       type="submit"
       disabled={pending}
-      className="inline-flex items-center justify-center rounded-full bg-camp-forest px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-camp-forest/90 disabled:cursor-wait disabled:opacity-70"
+      className="inline-flex items-center justify-center rounded-xl bg-camp-ember px-4 py-2.5 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark disabled:cursor-wait disabled:opacity-70"
     >
       {pending ? 'Adding...' : 'Add item'}
     </button>
@@ -62,7 +62,7 @@ export function CreateItemForm() {
         </section>
       ) : null}
 
-      <label className="grid gap-2 text-sm text-slate-700">
+      <label className="grid gap-2 text-sm text-camp-moss">
         <span className="font-medium text-camp-forest">Item name</span>
         <input
           type="text"
@@ -72,7 +72,7 @@ export function CreateItemForm() {
         />
       </label>
 
-      <label className="grid gap-2 text-sm text-slate-700">
+      <label className="grid gap-2 text-sm text-camp-moss">
         <span className="font-medium text-camp-forest">SKU</span>
         <input
           type="text"

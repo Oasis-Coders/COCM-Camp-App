@@ -31,27 +31,32 @@ const copyByMode = {
   },
 } as const;
 
+const inputClassName =
+  'mt-3 w-full rounded-card border-[1.5px] border-camp-forest/15 bg-white px-4 py-3 text-base text-camp-forest outline-none transition placeholder:text-camp-forest/40 focus:border-camp-moss focus:ring-2 focus:ring-camp-moss/20';
+
 export function AuthCard({ mode, action, redirectTo, status, message }: AuthCardProps) {
   const copy = copyByMode[mode];
   const alertClassName =
     status === 'success'
       ? 'border-emerald-200 bg-emerald-50 text-emerald-900'
-      : 'border-rose-200 bg-rose-50 text-rose-900';
+      : 'border-camp-ember-light bg-camp-ember-light text-camp-forest';
 
   return (
-    <main className="min-h-screen bg-[linear-gradient(180deg,_#d9edf6_0%,_#fcfcf7_45%,_#f4e8c1_100%)] px-4 py-10">
-      <div className="mx-auto max-w-4xl rounded-[32px] bg-white/85 p-8 shadow-panel">
-        <p className="text-xs uppercase tracking-[0.35em] text-camp-moss">{copy.eyebrow}</p>
-        <h1 className="mt-4 font-serif text-4xl text-camp-forest">{copy.title}</h1>
-        <p className="mt-4 max-w-2xl text-slate-700">{copy.description}</p>
+    <main className="min-h-screen bg-[linear-gradient(180deg,_#d9edf6_0%,_#faf6ee_45%,_#f4e8c1_100%)] px-4 py-10">
+      <div className="mx-auto max-w-4xl rounded-panel bg-white p-8 shadow-panel">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.35em] text-camp-moss">
+          {copy.eyebrow}
+        </p>
+        <h1 className="mt-4 font-serif text-4xl tracking-tight text-camp-forest">{copy.title}</h1>
+        <p className="mt-4 max-w-2xl text-camp-moss">{copy.description}</p>
 
         {message ? (
-          <div className={`mt-6 rounded-2xl border p-4 text-sm ${alertClassName}`}>{message}</div>
+          <div className={`mt-6 rounded-xl border p-4 text-sm ${alertClassName}`}>{message}</div>
         ) : null}
 
         <form
           action={action}
-          className="mt-8 rounded-[28px] border border-camp-forest/10 bg-white p-6 shadow-panel"
+          className="border-camp-forest/8 mt-8 rounded-card border bg-white p-6 shadow-card"
         >
           <input type="hidden" name="redirectTo" value={redirectTo} />
           {mode === 'sign-up' ? (
@@ -71,7 +76,7 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
                     required
                     autoComplete="given-name"
                     placeholder="First name"
-                    className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+                    className={inputClassName}
                   />
                 </div>
 
@@ -89,7 +94,7 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
                     required
                     autoComplete="family-name"
                     placeholder="Last name"
-                    className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+                    className={inputClassName}
                   />
                 </div>
               </div>
@@ -98,7 +103,7 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
                 htmlFor="preferredName"
                 className="mt-5 block text-sm font-semibold text-camp-forest"
               >
-                Preferred name <span className="font-normal text-slate-500">(optional)</span>
+                Preferred name <span className="font-normal text-camp-moss">(optional)</span>
               </label>
               <input
                 id="preferredName"
@@ -106,7 +111,7 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
                 type="text"
                 autoComplete="nickname"
                 placeholder="What should we call you?"
-                className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+                className={inputClassName}
               />
             </>
           ) : null}
@@ -124,7 +129,7 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
             required
             autoComplete="email"
             placeholder="you@example.com"
-            className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+            className={inputClassName}
           />
 
           <label htmlFor="password" className="mt-5 block text-sm font-semibold text-camp-forest">
@@ -137,26 +142,29 @@ export function AuthCard({ mode, action, redirectTo, status, message }: AuthCard
             required
             autoComplete={mode === 'sign-in' ? 'current-password' : 'new-password'}
             placeholder={mode === 'sign-in' ? 'Enter your password' : 'Create a password'}
-            className="mt-3 w-full rounded-2xl border border-camp-forest/15 px-4 py-3 text-base outline-none transition focus:border-camp-forest/40"
+            className={inputClassName}
           />
 
           {mode === 'sign-up' ? (
-            <p className="mt-4 text-sm text-slate-500">
+            <p className="mt-4 text-sm text-camp-moss">
               Fields marked optional can be filled in later from your profile.
             </p>
           ) : null}
 
           <button
             type="submit"
-            className="mt-6 rounded-full bg-camp-forest px-5 py-3 font-semibold text-white transition hover:bg-camp-moss"
+            className="mt-6 rounded-xl bg-camp-ember px-6 py-3 font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-camp-ember/40"
           >
             {copy.submit}
           </button>
         </form>
 
-        <p className="mt-6 text-sm text-slate-600">
+        <p className="mt-6 text-sm text-camp-moss">
           {copy.alternateLabel}{' '}
-          <Link href={copy.alternateHref} className="font-semibold text-camp-forest underline">
+          <Link
+            href={copy.alternateHref}
+            className="font-semibold text-camp-ember underline underline-offset-2"
+          >
             {copy.alternateCta}
           </Link>
         </p>

@@ -62,7 +62,7 @@ export default async function RegisterPage({ params }: RegisterPageProps) {
 
   return (
     <AppShell title={`Register`} eyebrow={event.title}>
-      <div className="mx-auto max-w-2xl rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+      <div className="mx-auto max-w-2xl rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
         <RegistrationForm eventId={event.id} />
       </div>
     </AppShell>

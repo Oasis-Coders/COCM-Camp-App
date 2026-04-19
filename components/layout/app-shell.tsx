@@ -18,18 +18,20 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
   );
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_left,_rgba(217,237,246,0.75),_transparent_32%),linear-gradient(180deg,_#fcfcf7_0%,_#f6f0df_100%)] text-slate-950">
+    <div className="min-h-screen bg-camp-cream text-camp-forest">
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col gap-6 px-4 py-4 lg:flex-row lg:px-8">
         <MobileSidebar>
-          <div className="rounded-[24px] bg-camp-forest p-4 text-white">
-            <p className="text-xs uppercase tracking-[0.3em] text-camp-sky">Camp Ops</p>
-            <h1 className="mt-2 font-serif text-2xl">Camp Management</h1>
+          <div className="rounded-panel bg-camp-forest p-5 text-white shadow-card">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-camp-sky">
+              Camp Ops
+            </p>
+            <h1 className="mt-2 font-serif text-2xl tracking-tight">Camp Management</h1>
           </div>
 
-          <div className="mt-4 rounded-[24px] border border-camp-forest/10 bg-camp-sand/60 p-3 text-sm">
-            <p className="font-semibold text-camp-forest">{session.displayName}</p>
-            <p className="text-slate-700">{session.email}</p>
-            <p className="mt-2 inline-flex rounded-full bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-camp-forest">
+          <div className="mt-4 rounded-card border border-camp-forest/10 bg-white p-4 shadow-card">
+            <p className="text-sm font-semibold text-camp-forest">{session.displayName}</p>
+            <p className="text-sm text-camp-moss">{session.email}</p>
+            <p className="mt-2 inline-flex rounded-[10px] bg-camp-sand px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.2em] text-camp-forest">
               {session.role.replace('_', ' ')}
             </p>
           </div>
@@ -46,9 +48,11 @@ export async function AppShell({ title, eyebrow, children }: AppShellProps) {
         </MobileSidebar>
 
         <main className="flex-1">
-          <header className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel backdrop-blur">
-            <p className="text-xs uppercase tracking-[0.3em] text-camp-moss">{eyebrow}</p>
-            <h2 className="mt-3 font-serif text-4xl text-camp-forest">{title}</h2>
+          <header className="border-camp-forest/8 rounded-panel border bg-white p-6 shadow-card">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-camp-moss">
+              {eyebrow}
+            </p>
+            <h2 className="mt-3 font-serif text-4xl tracking-tight text-camp-forest">{title}</h2>
           </header>
 
           <section className="mt-6">{children}</section>

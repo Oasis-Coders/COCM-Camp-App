@@ -26,7 +26,7 @@ function SaveButton() {
     <button
       type="submit"
       disabled={pending}
-      className="rounded-xl bg-camp-forest px-3 py-2 text-sm font-semibold text-white transition hover:bg-camp-moss disabled:cursor-wait disabled:opacity-70"
+      className="rounded-xl bg-camp-ember px-3 py-2 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark disabled:cursor-wait disabled:opacity-70"
     >
       {pending ? 'Saving...' : 'Save'}
     </button>

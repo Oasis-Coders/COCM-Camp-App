@@ -101,10 +101,10 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
   if (!supabaseReady) {
     return (
       <main className="min-h-screen bg-[linear-gradient(180deg,_#d9edf6_0%,_#fcfcf7_45%,_#f4e8c1_100%)] px-4 py-10">
-        <div className="mx-auto max-w-4xl rounded-[32px] bg-white/85 p-8 shadow-panel">
+        <div className="mx-auto max-w-4xl rounded-panel bg-white p-8 shadow-card">
           <p className="text-xs uppercase tracking-[0.35em] text-camp-moss">Sign in</p>
           <h1 className="mt-4 font-serif text-4xl text-camp-forest">Access the camp workspace</h1>
-          <p className="mt-4 max-w-2xl text-slate-700">
+          <p className="mt-4 max-w-2xl text-camp-moss">
             Supabase is not configured in this environment yet, so the app is still exposing demo
             role access for local exploration.
           </p>
@@ -114,12 +114,12 @@ export default async function SignInPage({ searchParams }: SignInPageProps) {
               <form key={role} action={signInAs.bind(null, role, redirectTo)}>
                 <button
                   type="submit"
-                  className="w-full rounded-[24px] border border-camp-forest/10 bg-white px-5 py-5 text-left shadow-panel transition hover:-translate-y-0.5 hover:border-camp-forest/25"
+                  className="w-full rounded-card border border-camp-forest/10 bg-white px-5 py-5 text-left shadow-card transition hover:-translate-y-0.5 hover:border-camp-forest/25"
                 >
                   <span className="block font-semibold capitalize text-camp-forest">
                     {role.replace('_', ' ')}
                   </span>
-                  <span className="mt-1 block text-sm text-slate-600">
+                  <span className="mt-1 block text-sm text-camp-moss">
                     Enter the app with {role.replace('_', ' ')} navigation and route access.
                   </span>
                 </button>

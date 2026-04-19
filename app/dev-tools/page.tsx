@@ -31,10 +31,10 @@ export default async function DevToolsPage() {
   return (
     <AppShell title="Dev Tools" eyebrow="Temporary internal tools">
       <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Tool hub</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">Developer menu</h3>
-          <p className="mt-3 max-w-2xl text-sm text-slate-600">
+          <p className="mt-3 max-w-2xl text-sm text-camp-moss">
             This page is the entry point for temporary development utilities. Personal account
             details now live under the main Profile tab, while administrative tools stay grouped
             here.
@@ -45,12 +45,12 @@ export default async function DevToolsPage() {
               <Link
                 key={item.label}
                 href={item.href}
-                className="rounded-[24px] border border-camp-forest/10 bg-white px-5 py-5 shadow-panel transition hover:-translate-y-0.5 hover:border-camp-forest/25"
+                className="rounded-card border border-camp-forest/10 bg-white px-5 py-5 shadow-card transition hover:-translate-y-0.5 hover:border-camp-forest/25"
               >
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <p className="font-semibold text-camp-forest">{item.label}</p>
-                    <p className="mt-2 text-sm text-slate-600">{item.description}</p>
+                    <p className="mt-2 text-sm text-camp-moss">{item.description}</p>
                   </div>
                   <span className="rounded-full bg-camp-sky px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-camp-forest">
                     {item.status}
@@ -61,10 +61,10 @@ export default async function DevToolsPage() {
           </div>
         </article>
 
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Current session</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">Who is using the tools</h3>
-          <dl className="mt-6 grid gap-4 text-sm text-slate-700">
+          <dl className="mt-6 grid gap-4 text-sm text-camp-moss">
             <div>
               <dt className="font-semibold text-camp-moss">Display name</dt>
               <dd>{session.displayName}</dd>

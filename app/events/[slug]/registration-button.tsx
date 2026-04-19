@@ -65,7 +65,7 @@ export function RegistrationButton({
   return (
     <Link
       href={`/events/${eventSlug}/register`}
-      className="inline-block w-full rounded-full bg-camp-forest px-6 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-camp-forest/90"
+      className="inline-block w-full rounded-xl bg-camp-ember px-6 py-3 text-center text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark"
     >
       Begin Registration
     </Link>

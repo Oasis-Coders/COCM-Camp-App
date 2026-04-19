@@ -122,7 +122,7 @@ export function AdminEventForm({
   const selectedProfiles = profiles.filter((p) => selectedMandatory.includes(p.id));
 
   return (
-    <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+    <div className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
       <form action={handleSubmit} className="flex flex-col gap-4">
         <div>
           <label className="mb-1 block text-sm font-medium text-camp-forest" htmlFor="title">
@@ -212,7 +212,7 @@ export function AdminEventForm({
           <label className="mb-1 block text-sm font-medium text-camp-forest">
             Mandatory Participants
           </label>
-          <p className="mb-2 text-xs text-slate-500">
+          <p className="mb-2 text-xs text-camp-moss">
             These users will be automatically registered and cannot cancel.
           </p>
 
@@ -222,7 +222,7 @@ export function AdminEventForm({
               {selectedProfiles.map((profile) => (
                 <span
                   key={profile.id}
-                  className="inline-flex items-center gap-1 rounded-full bg-camp-forest/10 px-3 py-1 text-xs font-medium text-camp-forest"
+                  className="bg-camp-forest/8 inline-flex items-center gap-1 rounded-full px-3 py-1 text-xs font-medium text-camp-forest"
                 >
                   {profile.displayName}
                   <button
@@ -262,7 +262,7 @@ export function AdminEventForm({
                         onChange={() => toggleMandatory(profile.id)}
                         className="rounded border-slate-300 text-camp-forest focus:ring-camp-forest"
                       />
-                      <span className="text-slate-700">{profile.displayName}</span>
+                      <span className="text-camp-moss">{profile.displayName}</span>
                       <span className="text-xs text-slate-400">{profile.email}</span>
                     </label>
                   ))
@@ -278,7 +278,7 @@ export function AdminEventForm({
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-full bg-camp-forest px-6 py-2 text-sm font-medium text-white transition hover:bg-camp-forest/90 disabled:opacity-50"
+            className="rounded-xl bg-camp-ember px-6 py-2 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark disabled:opacity-50"
           >
             {isPending ? 'Saving...' : isEditing ? 'Update Event' : 'Create Event'}
           </button>

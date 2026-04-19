@@ -17,7 +17,7 @@ export default async function AdminPage() {
           <Link
             key={link.href}
             href={link.href}
-            className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel transition hover:border-camp-forest/25"
+            className="rounded-card border border-camp-forest/10 bg-white p-5 shadow-card transition hover:border-camp-forest/25"
           >
             <span className="font-semibold text-camp-forest">{link.label}</span>
           </Link>

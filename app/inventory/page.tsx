@@ -79,10 +79,10 @@ function InventorySectionCard({
   children: React.ReactNode;
 }) {
   return (
-    <article className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+    <article className="rounded-panel border border-camp-forest/10 bg-white p-6 shadow-card">
       <p className="text-xs uppercase tracking-[0.24em] text-camp-moss">{eyebrow}</p>
       <h3 className="mt-3 font-serif text-2xl text-camp-forest">{title}</h3>
-      {description ? <p className="mt-2 max-w-3xl text-sm text-slate-600">{description}</p> : null}
+      {description ? <p className="mt-2 max-w-3xl text-sm text-camp-moss">{description}</p> : null}
       <div className="mt-5">{children}</div>
     </article>
   );
@@ -115,7 +115,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
       <div className="grid gap-6">
         {inventoryStatus ? (
           <section
-            className={`rounded-[24px] border px-5 py-4 text-sm shadow-panel ${toneClasses(inventoryStatus.tone)}`}
+            className={`rounded-card border px-5 py-4 text-sm shadow-card ${toneClasses(inventoryStatus.tone)}`}
           >
             {inventoryStatus.text}
           </section>
@@ -127,7 +127,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
             eyebrow="Unavailable"
             description="The inventory MVP needs Supabase before items, stock, and movement history can be loaded."
           >
-            <div className="rounded-[22px] border border-camp-forest/10 bg-camp-sand/35 p-5 text-sm text-slate-700">
+            <div className="rounded-[22px] border border-camp-forest/10 bg-camp-sand/35 p-5 text-sm text-camp-moss">
               Add the Supabase URL and anon key to enable the minimal inventory workflow.
             </div>
           </InventorySectionCard>
@@ -161,7 +161,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                 description="Every stock movement records the operator automatically, and the full log lives on a separate page."
               >
                 <div className="grid gap-4 md:grid-cols-[0.7fr_0.3fr]">
-                  <div className="rounded-[22px] border border-camp-forest/10 bg-camp-sand/25 p-5 text-sm text-slate-700">
+                  <div className="rounded-[22px] border border-camp-forest/10 bg-camp-sand/25 p-5 text-sm text-camp-moss">
                     <p>
                       Items:{' '}
                       <span className="font-semibold text-camp-forest">{products.length}</span>
@@ -189,13 +189,13 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
               >
                 <div className="grid gap-5">
                   <div className="grid gap-3 md:grid-cols-3">
-                    <div className="rounded-[22px] border border-camp-forest/10 bg-camp-sand/25 p-4 text-sm text-slate-700">
+                    <div className="rounded-[22px] border border-camp-forest/10 bg-camp-sand/25 p-4 text-sm text-camp-moss">
                       <p className="text-xs uppercase tracking-[0.2em] text-camp-moss">Items</p>
                       <p className="mt-2 text-2xl font-semibold text-camp-forest">
                         {products.length}
                       </p>
                     </div>
-                    <div className="rounded-[22px] border border-camp-forest/10 bg-white p-4 text-sm text-slate-700">
+                    <div className="rounded-[22px] border border-camp-forest/10 bg-white p-4 text-sm text-camp-moss">
                       <p className="text-xs uppercase tracking-[0.2em] text-camp-moss">
                         Stock lines
                       </p>
@@ -203,7 +203,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                         {stockItems.length}
                       </p>
                     </div>
-                    <div className="rounded-[22px] border border-camp-forest/10 bg-white p-4 text-sm text-slate-700">
+                    <div className="rounded-[22px] border border-camp-forest/10 bg-white p-4 text-sm text-camp-moss">
                       <p className="text-xs uppercase tracking-[0.2em] text-camp-moss">Workflow</p>
                       <p className="mt-2 leading-6">
                         Add or remove stock inline without leaving this panel.
@@ -212,7 +212,7 @@ export default async function InventoryPage({ searchParams }: InventoryPageProps
                   </div>
 
                   {stockItems.length === 0 ? (
-                    <div className="rounded-[22px] border border-dashed border-camp-forest/20 bg-white/75 p-5 text-sm text-slate-600">
+                    <div className="rounded-[22px] border border-dashed border-camp-forest/20 bg-white/75 p-5 text-sm text-camp-moss">
                       No stock records yet.
                     </div>
                   ) : (

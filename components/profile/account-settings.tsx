@@ -265,14 +265,14 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
   return (
     <>
       <div className="grid gap-6 xl:grid-cols-[1.1fr,0.9fr]">
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Account details</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">Your current identity</h3>
-          <p className="mt-3 max-w-2xl text-sm text-slate-600">
+          <p className="mt-3 max-w-2xl text-sm text-camp-moss">
             Manage the account and login details for the currently signed-in user.
           </p>
 
-          <dl className="mt-6 grid gap-4 text-sm text-slate-700 md:grid-cols-2">
+          <dl className="mt-6 grid gap-4 text-sm text-camp-moss md:grid-cols-2">
             <div>
               <dt className="font-semibold text-camp-moss">Mode</dt>
               <dd>{session.mode}</dd>
@@ -300,10 +300,10 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
           </dl>
         </article>
 
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Notes</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">How account details behave</h3>
-          <ul className="mt-4 space-y-3 text-sm text-slate-700">
+          <ul className="mt-4 space-y-3 text-sm text-camp-moss">
             <li>Profile edits update the `profiles` row and Supabase auth metadata together.</li>
             <li>Email and password updates affect the currently signed-in account only.</li>
             <li>Email changes may trigger confirmation depending on Supabase Auth settings.</li>
@@ -313,7 +313,7 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
       </div>
 
       <div className="mt-6 grid gap-6 xl:grid-cols-2">
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Profile editor</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">Edit profile fields</h3>
 
@@ -368,7 +368,7 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
                   htmlFor="preferredName"
                   className="block text-sm font-semibold text-camp-forest"
                 >
-                  Preferred name <span className="font-normal text-slate-500">(optional)</span>
+                  Preferred name <span className="font-normal text-camp-moss">(optional)</span>
                 </label>
                 <input
                   id="preferredName"
@@ -382,20 +382,20 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
 
               <button
                 type="submit"
-                className="rounded-full bg-camp-forest px-5 py-3 font-semibold text-white transition hover:bg-camp-moss"
+                className="rounded-xl bg-camp-ember px-5 py-3 font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark"
               >
                 Save profile
               </button>
             </form>
           ) : (
-            <p className="mt-6 text-sm text-slate-600">
+            <p className="mt-6 text-sm text-camp-moss">
               Supabase is not configured here, so this environment can only show demo identity
               details and cannot persist profile edits.
             </p>
           )}
         </article>
 
-        <article className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+        <article className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
           <p className="text-xs uppercase tracking-[0.25em] text-camp-moss">Credential editor</p>
           <h3 className="mt-3 font-serif text-2xl text-camp-forest">Update login details</h3>
 
@@ -423,7 +423,7 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
 
               <div>
                 <label htmlFor="password" className="block text-sm font-semibold text-camp-forest">
-                  New password <span className="font-normal text-slate-500">(optional)</span>
+                  New password <span className="font-normal text-camp-moss">(optional)</span>
                 </label>
                 <input
                   id="password"
@@ -437,13 +437,13 @@ export async function AccountSettings({ searchParams }: AccountSettingsProps) {
 
               <button
                 type="submit"
-                className="rounded-full bg-camp-forest px-5 py-3 font-semibold text-white transition hover:bg-camp-moss"
+                className="rounded-xl bg-camp-ember px-5 py-3 font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark"
               >
                 Save credentials
               </button>
             </form>
           ) : (
-            <p className="mt-6 text-sm text-slate-600">
+            <p className="mt-6 text-sm text-camp-moss">
               Credential editing requires a real Supabase-backed session.
             </p>
           )}

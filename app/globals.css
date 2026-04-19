@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=Inter:wght@400;500;600;700&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -16,7 +18,9 @@ html {
 
 body {
   margin: 0;
-  font-family: var(--font-sans, 'Trebuchet MS', 'Segoe UI', sans-serif);
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  background-color: #faf6ee;
+  color: #0f3d2e;
 }
 
 a {

@@ -50,8 +50,8 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
           href="/events?filter=all"
           className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
             currentFilter === 'all'
-              ? 'bg-camp-forest text-white'
-              : 'bg-white/85 text-slate-600 shadow-sm hover:bg-white'
+              ? 'bg-camp-forest text-white shadow-sm'
+              : 'bg-white text-camp-moss shadow-card hover:shadow-card-hover'
           }`}
         >
           All
@@ -60,8 +60,8 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
           href="/events?filter=upcoming"
           className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
             currentFilter === 'upcoming'
-              ? 'bg-camp-forest text-white'
-              : 'bg-white/85 text-slate-600 shadow-sm hover:bg-white'
+              ? 'bg-camp-forest text-white shadow-sm'
+              : 'bg-white text-camp-moss shadow-card hover:shadow-card-hover'
           }`}
         >
           Upcoming
@@ -70,8 +70,8 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
           href="/events?filter=past"
           className={`rounded-full px-4 py-2 text-sm font-semibold transition-colors ${
             currentFilter === 'past'
-              ? 'bg-camp-forest text-white'
-              : 'bg-white/85 text-slate-600 shadow-sm hover:bg-white'
+              ? 'bg-camp-forest text-white shadow-sm'
+              : 'bg-white text-camp-moss shadow-card hover:shadow-card-hover'
           }`}
         >
           Past
@@ -80,24 +80,24 @@ export default async function EventsPage({ searchParams }: EventsPageProps) {
 
       <div className="grid gap-4">
         {(events || []).length === 0 ? (
-          <div className="rounded-[24px] border border-dashed border-camp-forest/10 bg-white/60 p-8 text-center">
+          <div className="rounded-card border border-dashed border-camp-forest/10 bg-white p-8 text-center">
             <p className="text-4xl">📅</p>
             <p className="mt-3 font-serif text-lg text-camp-forest">No events yet</p>
-            <p className="mt-1 text-sm text-slate-500">Check back soon for upcoming events.</p>
+            <p className="mt-1 text-sm text-camp-moss">Check back soon for upcoming events.</p>
           </div>
         ) : (
           (events || []).map((event) => (
             <Link
               key={event.id}
               href={`/events/${event.slug}`}
-              className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-5 shadow-panel transition hover:border-camp-forest/25"
+              className="rounded-card border border-camp-forest/10 bg-white p-5 shadow-card transition hover:border-camp-forest/25"
             >
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <h3 className="font-serif text-2xl text-camp-forest">{event.title}</h3>
-                  <p className="mt-2 text-slate-600">{event.location}</p>
+                  <p className="mt-2 text-camp-moss">{event.location}</p>
                 </div>
-                <div className="text-sm text-slate-600">
+                <div className="text-sm text-camp-moss">
                   <p>
                     Status: <span className="font-semibold capitalize">{event.status}</span>
                   </p>

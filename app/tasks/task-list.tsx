@@ -202,7 +202,7 @@ export function TaskList({
               className={`rounded-full px-4 py-2 text-sm font-medium transition-colors ${
                 filter === tab.key
                   ? 'bg-camp-forest text-white'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'bg-slate-100 text-camp-moss hover:bg-slate-200'
               }`}
             >
               {tab.label}
@@ -224,7 +224,7 @@ export function TaskList({
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value as TaskStatus | 'any')}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
+            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm text-camp-moss focus:border-camp-forest/30 focus:outline-none focus:ring-2 focus:ring-camp-forest/10"
           >
             <option value="any">All statuses</option>
             {TASK_STATUSES.filter((s) => isStaff || s !== 'draft').map((s) => (
@@ -237,7 +237,7 @@ export function TaskList({
           {isStaff && (
             <button
               onClick={() => setShowCreate(true)}
-              className="rounded-full bg-camp-forest px-5 py-2 text-sm font-semibold text-white transition hover:bg-camp-forest/90"
+              className="rounded-xl bg-camp-ember px-5 py-2 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark"
             >
               + New Task
             </button>
@@ -256,9 +256,9 @@ export function TaskList({
       {/* Task cards */}
       <div className="grid gap-4">
         {filteredTasks.length === 0 ? (
-          <div className="rounded-[24px] border border-dashed border-slate-200 bg-white/60 p-8 text-center">
+          <div className="rounded-card border border-dashed border-slate-200 bg-white p-8 text-center">
             <p className="text-4xl">📋</p>
-            <p className="mt-3 text-sm text-slate-500">
+            <p className="mt-3 text-sm text-camp-moss">
               {filter === 'mine'
                 ? 'No tasks assigned to you.'
                 : filter === 'active'
@@ -293,7 +293,7 @@ export function TaskList({
             return (
               <article
                 key={task.id}
-                className={`group rounded-[24px] border bg-white/85 p-5 shadow-panel transition-all ${
+                className={`group rounded-card border bg-white p-5 shadow-card transition-all ${
                   isPending ? 'opacity-50' : ''
                 } ${isTerminal ? 'border-slate-200 opacity-70 hover:opacity-100' : 'border-camp-forest/10'} ${
                   isOwn && !isTerminal ? 'ring-1 ring-camp-forest/10' : ''
@@ -308,7 +308,7 @@ export function TaskList({
                           href={`/tasks/${task.id}`}
                           className={`font-semibold transition-colors hover:underline ${
                             isTerminal
-                              ? 'text-slate-500 line-through'
+                              ? 'text-camp-moss line-through'
                               : 'text-camp-forest hover:text-camp-forest/80'
                           }`}
                         >
@@ -321,7 +321,7 @@ export function TaskList({
                         )}
                       </div>
                       {task.description && (
-                        <p className="mt-1 line-clamp-2 text-sm text-slate-500">
+                        <p className="mt-1 line-clamp-2 text-sm text-camp-moss">
                           {task.description}
                         </p>
                       )}
@@ -375,7 +375,7 @@ export function TaskList({
                   </div>
 
                   {/* Meta row */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-camp-moss">
                     <span>
                       Assignee:{' '}
                       <span className={isOwn ? 'font-semibold text-camp-forest' : ''}>

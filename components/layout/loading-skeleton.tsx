@@ -14,12 +14,12 @@
 type SkeletonVariant = 'default' | 'dashboard' | 'form';
 
 function Pulse({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-slate-200 ${className ?? ''}`} />;
+  return <div className={`animate-pulse rounded-lg bg-camp-sand/60 ${className ?? ''}`} />;
 }
 
 function HeaderSkeleton() {
   return (
-    <div className="rounded-[28px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel backdrop-blur">
+    <div className="border-camp-forest/8 rounded-panel border bg-white p-6 shadow-card">
       <Pulse className="h-3 w-24" />
       <Pulse className="mt-4 h-9 w-64" />
     </div>
@@ -29,13 +29,13 @@ function HeaderSkeleton() {
 function DefaultContent() {
   return (
     <div className="mt-6 space-y-5">
-      <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+      <div className="border-camp-forest/8 rounded-card border bg-white p-6 shadow-card">
         <Pulse className="h-5 w-48" />
         <Pulse className="mt-4 h-4 w-full" />
         <Pulse className="mt-2 h-4 w-3/4" />
         <Pulse className="mt-2 h-4 w-5/6" />
       </div>
-      <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+      <div className="border-camp-forest/8 rounded-card border bg-white p-6 shadow-card">
         <Pulse className="h-5 w-36" />
         <Pulse className="mt-4 h-4 w-full" />
         <Pulse className="mt-2 h-4 w-2/3" />
@@ -51,7 +51,7 @@ function DashboardContent() {
         {[1, 2, 3].map((i) => (
           <div
             key={i}
-            className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel"
+            className="border-camp-forest/8 rounded-card border bg-white p-6 shadow-card"
           >
             <Pulse className="h-3 w-20" />
             <Pulse className="mt-3 h-8 w-16" />
@@ -59,7 +59,7 @@ function DashboardContent() {
           </div>
         ))}
       </div>
-      <div className="mt-6 rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+      <div className="border-camp-forest/8 mt-6 rounded-card border bg-white p-6 shadow-card">
         <Pulse className="h-5 w-32" />
         <div className="mt-4 grid grid-cols-7 gap-2">
           {Array.from({ length: 7 }).map((_, i) => (
@@ -74,14 +74,14 @@ function DashboardContent() {
 
 function FormContent() {
   return (
-    <div className="mt-6 rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+    <div className="border-camp-forest/8 mt-6 rounded-card border bg-white p-6 shadow-card">
       {[1, 2, 3, 4, 5].map((i) => (
         <div key={i} className={i > 1 ? 'mt-5' : ''}>
           <Pulse className="h-3 w-28" />
           <Pulse className="mt-2 h-10 w-full" />
         </div>
       ))}
-      <Pulse className="mt-6 h-10 w-36 rounded-full" />
+      <Pulse className="mt-6 h-10 w-36 rounded-xl" />
     </div>
   );
 }

@@ -49,7 +49,7 @@ export function AddParticipantForm({
   };
 
   return (
-    <div className="rounded-[24px] border border-camp-forest/10 bg-white/85 p-6 shadow-panel">
+    <div className="rounded-card border border-camp-forest/10 bg-white p-6 shadow-card">
       <h3 className="mb-3 font-serif text-lg text-camp-forest">Add Participant</h3>
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
         <div className="relative flex-1">
@@ -85,7 +85,7 @@ export function AddParticipantForm({
                     }}
                   >
                     <span className="font-medium">{p.displayName}</span>{' '}
-                    <span className="text-slate-500">({p.email})</span>
+                    <span className="text-camp-moss">({p.email})</span>
                   </button>
                 </li>
               ))}
@@ -96,7 +96,7 @@ export function AddParticipantForm({
           type="button"
           onClick={handleRegister}
           disabled={!selectedId || isPending}
-          className="rounded-full bg-camp-forest px-6 py-2 text-sm font-medium text-white transition hover:bg-camp-forest/90 disabled:opacity-50"
+          className="rounded-xl bg-camp-ember px-6 py-2 text-sm font-semibold text-white shadow-ember-glow transition-all hover:bg-camp-ember-dark disabled:opacity-50"
         >
           {isPending ? 'Adding…' : 'Register'}
         </button>
